@@ -1,13 +1,12 @@
 ## A finite dashboard of every pure component renderer.
 ##
-## The example owns its short manual redraw loop because `LiveDisplay` belongs
-## to a later phase. Redirected output receives only the completed frame. Use
+## The example supplies frames from its short manual refresh loop to a
+## `LiveDisplay`. Redirected output receives only the completed frame. Use
 ## `--once` for deterministic documentation and build checks.
 
-import std/[monotimes, os, strutils, times]
+import std/[monotimes, os, times]
+from std/options import get
 
-import terminal_screen
-import terminal_style
 import terminal_status
 
 proc usage() =
@@ -17,14 +16,14 @@ proc usage() =
   echo "  --once     print only the completed frame"
 
 var
-  options = defaultRenderOptions()
+  renderOptions = defaultRenderOptions()
   animate = true
   colorRequested = true
 
 for argument in commandLineParams():
   case argument
   of "--ascii":
-    options.characters = statusAscii
+    renderOptions.characters = statusAscii
   of "--no-color":
     colorRequested = false
   of "--once":
@@ -39,14 +38,13 @@ for argument in commandLineParams():
 
 let
   started = getMonoTime()
-  ansiOutput = animate and detectCapabilities(output = stdout).supportsAnsi
   lastTick = 16
   tickMilliseconds = 120
 
-options.width = 70
-options.barWidth = 18
-options.showElapsed = true
-options.useColor = colorRequested and (ansiOutput or not animate)
+renderOptions.width = 70
+renderOptions.barWidth = 18
+renderOptions.showElapsed = true
+renderOptions.useColor = colorRequested
 
 var
   spinner = initSpinner("Resolving package graph", arcSpinner(), started)
@@ -64,20 +62,17 @@ tracker.start(started)
 tracker.setCurrentDetail("debug + release")
 
 proc frame(now: MonoTime): string =
-  spinner.render(options, now) & "\n\n" &
-    progress.render(options, now) & "\n\n" &
-    tracker.render(options, now)
+  spinner.render(renderOptions, now) & "\n\n" &
+    progress.render(renderOptions, now) & "\n\n" &
+    tracker.render(renderOptions, now)
 
-proc padded(value: string): string =
-  var rows: seq[string]
-  for row in value.splitLines:
-    rows.add padAnsi(row, options.width)
-  rows.join("\n")
+var liveOptions = defaultLiveDisplayOptions(stdout)
+liveOptions.hideCursor = true
+if not animate:
+  liveOptions.mode = livePlain
 
-if ansiOutput:
-  stdout.hideCursor(flush = true)
-
-try:
+withLiveDisplay display, liveOptions:
+  let ansiOutput = display.effectiveMode.get == liveAnsi
   for tick in 0 .. lastTick:
     let now = started + initDuration(
       milliseconds = int64(tick * tickMilliseconds))
@@ -96,19 +91,6 @@ try:
       spinner.setLabel("Package graph resolved")
       spinner.succeed(now)
 
-    let rendered = frame(now)
+    display.update(frame(now))
     if ansiOutput:
-      if tick > 0:
-        stdout.write cursorUpCode(rendered.splitLines.len - 1) & cursorColumnCode(1)
-      stdout.write rendered.padded
-      stdout.flushFile()
       sleep(tickMilliseconds)
-    elif tick == lastTick:
-      stdout.writeLine rendered
-
-  if ansiOutput:
-    stdout.write "\n"
-    stdout.flushFile()
-finally:
-  if ansiOutput:
-    stdout.showCursor(flush = true)

@@ -6,6 +6,15 @@ This project follows Semantic Versioning.
 
 ### Added
 
+- Add `terminal_status/live` with auto, forced-ANSI, and forced-plain output
+  modes, a borrowed `stderr` default, and capability selection deferred until
+  display open.
+- Add redirected-output coalescing that emits only the latest frame at close by
+  default, plus opt-in changed-frame logging with ANSI stripping and duplicate
+  suppression.
+- Export live output through the façade, migrate the finite renderer dashboard
+  to the live API, and add focused tests, generated API documentation, a
+  live-output guide, and a finite strategy example.
 - Add pure render overloads for spinners, determinate and indeterminate
   progress bars, insertion-ordered multi-progress collections, and step
   trackers, with one caller-supplied monotonic timestamp per frame.

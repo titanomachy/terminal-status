@@ -1,10 +1,10 @@
 # TerminalStatus
 
 TerminalStatus is a pure-Nim library under active development for terminal
-spinners, single and multi-progress bars, and ordered task step-trackers. The
-component model and pure rendering layers are complete: every renderer is
-deterministic, terminal-cell aware, ANSI-safe, and independent of terminal I/O.
-The managed live-output layer is the next implementation phase.
+spinners, single and multi-progress bars, and ordered task step-trackers. Its
+component renderers are deterministic, terminal-cell aware, and ANSI-safe;
+the explicit live layer can redraw an ANSI terminal or coalesce redirected
+output without starting a thread or owning terminal input state.
 
 The `0.1.x` line requires Nim 2.2.10 or newer and builds on
 `terminal_style >= 0.1.1` and `terminal_screen >= 0.1.1`. The normative design
@@ -216,6 +216,35 @@ ownership details. The finite [`shared_types.nim`](examples/shared_types.nim)
 and [`validation.nim`](examples/validation.nim) examples show those contracts
 and their failure handling as runnable programs.
 
+## Live output strategies
+
+`LiveDisplay` borrows `stderr` by default. Auto mode performs one TerminalScreen
+capability check when the display opens: ANSI-capable output uses redraws, while
+a file or pipe uses plain output. Construction and import remain side-effect
+free.
+
+```nim
+import terminal_status
+
+var options = defaultLiveDisplayOptions() # borrowed stderr
+withLiveDisplay display, options:
+  display.update("Downloading\n25% complete")
+  display.update("Download complete\n100% complete")
+```
+
+Redirected output defaults to `plainFinalOnly`, so the example emits only the
+latest frame when it closes instead of logging every animation tick. Set
+`mode = livePlain` and `plainPolicy = plainEveryChange` to write every changed
+visible frame; duplicate frames and color-only changes are suppressed. Plain
+output always strips ANSI.
+
+Displays are single-use and single-thread owned. They never close the borrowed
+stream, enter raw input mode, query terminal geometry, or create a refresh
+loop. Prefer `withLiveDisplay`, whose `finally` cleanup covers normal return
+and catchable Nim exceptions (not signals, process termination, defects, or
+`SIGKILL`). See the [live output guide](docs/live-output.md) and finite
+[`live_output.nim`](examples/live_output.nim) example.
+
 ## Modules
 
 | Module | Available responsibility |
@@ -227,10 +256,12 @@ and their failure handling as runnable programs.
 | `terminal_status/steps` | Ordered step state, details, failure, and cancellation. |
 | `terminal_status/themes` | Semantic TerminalStyle values and Unicode/ASCII marker presets. |
 | `terminal_status/rendering` | Pure component renderers, metrics, text safety, and responsive cell widths. |
+| `terminal_status/live` | Auto/forced ANSI or plain output with coalesced redirected frames. |
 
 TerminalStatus uses TerminalStyle for ANSI-aware validation and terminal-cell
-measurement. The finite demo uses TerminalScreen for terminal detection and
-cursor ownership. Library model modules never query or write to a terminal.
+measurement. The live module uses TerminalScreen for deferred capability
+detection and cursor commands, but never opens a raw-mode session. Library
+model and rendering modules never query or write to a terminal.
 
 ## Development
 
@@ -251,6 +282,7 @@ nimble c -r examples/multi_progress.nim
 nimble c -r examples/step_tracker.nim
 nimble c -r examples/renderers.nim -- --once
 nimble c -r examples/customization.nim -- --once
+nimble c -r examples/live_output.nim
 nimble docs
 ```
 

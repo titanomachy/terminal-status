@@ -3,7 +3,7 @@ import std/[strutils, unittest]
 import terminal_status
 
 suite "public imports":
-  test "the facade exports models and Phase 2 renderers":
+  test "the facade exports models, renderers, and live output types":
     check statusPending is StatusState
     check progressDeterminate is ProgressMode
     check $TaskId(42) == "42"
@@ -27,3 +27,6 @@ suite "public imports":
     check spinner.render(options).endsWith(" Facade spinner")
     check progress.render(options).startsWith("● Facade progress")
     check tracker.render(options) == "○ Facade step"
+
+    check defaultLiveDisplayOptions().mode == liveAuto
+    check initLiveDisplay().state == displayNew

@@ -1,9 +1,10 @@
 ## Pure-Nim terminal status models and component renderers.
 ##
 ## The façade exposes shared contracts, component models, semantic themes,
-## marker presets, render options, and pure component render overloads.
-## Importing it performs no output, terminal detection, or background work.
+## marker presets, pure renderers, and explicit live-output strategies.
+## Importing it performs no output, terminal detection, or background work;
+## live capability detection is deferred until a display is opened.
 
-import terminal_status/[progress, rendering, spinners, steps, themes, types]
+import terminal_status/[live, progress, rendering, spinners, steps, themes, types]
 
-export progress, rendering, spinners, steps, themes, types
+export live, progress, rendering, spinners, steps, themes, types
