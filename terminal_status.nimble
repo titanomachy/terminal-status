@@ -17,5 +17,10 @@ requires "terminal_style >= 0.1.1"
 
 # Tasks
 
-task docs, "Generate terminal_status API documentation":
+task docs, "Generate public API and focused module documentation":
   exec "nim doc --skipParentCfg:on --project --index:on --outdir:build/docs --path:src src/terminal_status.nim"
+  exec "nim doc --skipParentCfg:on --index:on --outdir:build/docs --path:src src/terminal_status/types.nim"
+  exec "nim doc --skipParentCfg:on --index:on --outdir:build/docs --path:src src/terminal_status/spinners.nim"
+  exec "nim doc --skipParentCfg:on --index:on --outdir:build/docs --path:src src/terminal_status/progress.nim"
+  exec "nim doc --skipParentCfg:on --index:on --outdir:build/docs --path:src src/terminal_status/steps.nim"
+  exec "nim buildIndex --skipParentCfg:on --out:build/docs/theindex.html build/docs"
