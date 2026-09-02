@@ -25,6 +25,24 @@ type
   TaskIdExhaustedError* = object of StatusError
 
   TaskId* = distinct uint64
+
+  ProgressTaskSnapshot* = object
+    id*: TaskId
+    label*: string
+    unit*: string
+    mode*: ProgressMode
+    state*: StatusState
+    completed*: int64
+    total*: Option[int64]
+    startedAt*: MonoTime
+    finishedAt*: Option[MonoTime]
+
+  StepSnapshot* = object
+    label*: string
+    detail*: string
+    state*: StatusState
+    startedAt*: Option[MonoTime]
+    finishedAt*: Option[MonoTime]
 ```
 
 Required helpers:
@@ -40,6 +58,10 @@ support `==` and hashing so it can be used in ordinary collections, even if the
 first implementation uses a linear ordered sequence internally.
 
 `isTerminal` returns true only for succeeded, failed, and cancelled.
+
+Snapshots are shared value contracts. Component modules return fresh sequence
+storage containing these values, so changing a returned snapshot or sequence
+cannot mutate the source model.
 
 ## Common validation and transition rules
 
@@ -63,6 +85,34 @@ For every terminal transition:
 
 Elapsed time is `max(now - startedAt, zero)` while running, and
 `max(finishedAt - startedAt, zero)` when terminal.
+
+The shared module exposes the invariant helpers used by component modules so
+validation and timing rules have one implementation:
+
+```nim
+proc requireMeaningfulText*(value: string; fieldName = "label")
+proc requireMeaningfulOrEmptyText*(value: string; fieldName: string)
+proc requirePositive*[T: SomeInteger](value: T; fieldName: string)
+proc requireNonNegative*[T: SomeInteger](value: T; fieldName: string)
+proc requireValidIndex*(index, length: int; fieldName = "index")
+proc validateFrameWidths*(frames: openArray[string]; fieldName = "frames";
+                          asciiOnly = false): int
+proc requireSameLength*(leftLength, rightLength: int;
+                        fieldName = "sequences")
+proc copyValues*[T](values: openArray[T]): seq[T]
+proc transitionToTerminal*(state: var StatusState;
+                           finishedAt: var Option[MonoTime];
+                           target: StatusState; now: MonoTime)
+proc clampedDuration*(startedAt, endedAt: MonoTime): Duration
+proc elapsedDuration*(startedAt: MonoTime; finishedAt: Option[MonoTime];
+                      now: MonoTime): Duration
+```
+
+`validateFrameWidths` rejects empty sets and frames, control-bearing or
+zero-cell frames, unequal display widths, and non-printable/non-ASCII frames
+when `asciiOnly` is true. Component constructors remain responsible for
+cross-set rules such as fallback counts. `copyValues` is for sequences of
+value-owned model data; it always allocates fresh outer sequence storage.
 
 ## Spinner styles and spinner model (`terminal_status/spinners`)
 
@@ -245,19 +295,7 @@ Metrics:
 ### Multi-progress
 
 ```nim
-type
-  ProgressTaskSnapshot* = object
-    id*: TaskId
-    label*: string
-    unit*: string
-    mode*: ProgressMode
-    state*: StatusState
-    completed*: int64
-    total*: Option[int64]
-    startedAt*: MonoTime
-    finishedAt*: Option[MonoTime]
-
-  MultiProgress* = object # fields private
+type MultiProgress* = object # fields private
 
 proc initMultiProgress*(): MultiProgress
 proc len*(multi: MultiProgress): int
@@ -309,15 +347,7 @@ use a snapshot to mutate the collection.
 ## Step tracker (`terminal_status/steps`)
 
 ```nim
-type
-  StepSnapshot* = object
-    label*: string
-    detail*: string
-    state*: StatusState
-    startedAt*: Option[MonoTime]
-    finishedAt*: Option[MonoTime]
-
-  StepTracker* = object # fields private
+type StepTracker* = object # fields private
 
 proc initStepTracker*(
   labels: openArray[string],
