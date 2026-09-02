@@ -1,9 +1,10 @@
 # TerminalStatus
 
 TerminalStatus is a pure-Nim library under active development for terminal
-spinners, single and multi-progress bars, and ordered task step-trackers. Phase
-1 provides the complete, side-effect-free component model layer. Pure
-rendering and live output are the next implementation phases.
+spinners, single and multi-progress bars, and ordered task step-trackers. The
+component model layer is complete, and Phase 2 now includes semantic themes,
+Unicode and ASCII marker presets, and explicit render options. Pure component
+renderers and live output are the next implementation slices.
 
 The `0.1.x` line requires Nim 2.2.10 or newer and builds on
 `terminal_style >= 0.1.1` and `terminal_screen >= 0.1.1`. The normative design
@@ -13,6 +14,44 @@ and API contracts live in [`specs/`](specs/).
 
 [Download the source asciicast](docs/recordings/spinner.cast) or run the
 finite [`examples/spinner.nim`](examples/spinner.nim) demo locally.
+
+## Themes and character presets
+
+Presentation is local and explicit: `StatusTheme` holds semantic
+`TerminalStyle` values, `StatusCharacters` selects Unicode or ASCII glyphs,
+and `RenderOptions.useColor` determines whether styling is retained. No global
+theme is installed and no terminal is queried when defaults are constructed.
+
+![TerminalStatus semantic themes and custom spinner presets](docs/images/themes.gif)
+
+[Download the source asciicast](docs/recordings/themes.cast) or run the finite
+[`examples/customization.nim`](examples/customization.nim) demo locally.
+
+```nim
+import terminal_style
+import terminal_status
+
+var options = defaultRenderOptions()
+options.characters = statusAscii
+options.useColor = false
+options.theme.successStyle = initTerminalStyle(
+  foreground = colorMagenta,
+  attributes = {taBold}
+)
+
+doAssert asciiStatusMarkers().succeeded == "+"
+doAssert unicodeStatusMarkers().succeeded == "✓"
+```
+
+The default semantic colors are cyan for running work, green for success and
+completed bars, red for failures, yellow for cancellation, and dim bright
+black for pending or secondary content. The disabled TerminalStyle path strips
+both theme styling and caller-provided ANSI; upcoming component renderers will
+use this path for `useColor = false`.
+
+See the [themes and marker guide](docs/themes.md) and finite
+[`customization.nim`](examples/customization.nim) example for the full marker
+table, a custom theme and spinner preset, and `--ascii`/`--no-color` previews.
 
 ## Spinner
 
@@ -146,6 +185,8 @@ and their failure handling as runnable programs.
 | `terminal_status/spinners` | Validated presets and pure, time-derived spinner state. |
 | `terminal_status/progress` | Determinate/indeterminate progress metrics and ordered multi-progress tasks. |
 | `terminal_status/steps` | Ordered step state, details, failure, and cancellation. |
+| `terminal_status/themes` | Semantic TerminalStyle values and Unicode/ASCII marker presets. |
+| `terminal_status/rendering` | Explicit pure-render options; component renderers are the next Phase 2 slice. |
 
 TerminalStatus uses TerminalStyle for ANSI-aware validation and terminal-cell
 measurement. The finite demo uses TerminalScreen for terminal detection and
@@ -168,6 +209,7 @@ nimble c -r examples/progress_bar.nim
 nimble c -r examples/indeterminate_bar.nim
 nimble c -r examples/multi_progress.nim
 nimble c -r examples/step_tracker.nim
+nimble c -r examples/customization.nim -- --once
 nimble docs
 ```
 

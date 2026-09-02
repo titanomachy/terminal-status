@@ -23,4 +23,6 @@ task docs, "Generate public API and focused module documentation":
   exec "nim doc --skipParentCfg:on --index:on --outdir:build/docs --path:src src/terminal_status/spinners.nim"
   exec "nim doc --skipParentCfg:on --index:on --outdir:build/docs --path:src src/terminal_status/progress.nim"
   exec "nim doc --skipParentCfg:on --index:on --outdir:build/docs --path:src src/terminal_status/steps.nim"
+  exec "nim doc --skipParentCfg:on --index:on --outdir:build/docs --path:src src/terminal_status/themes.nim"
+  exec "nim doc --skipParentCfg:on --index:on --outdir:build/docs --path:src src/terminal_status/rendering.nim"
   exec "nim buildIndex --skipParentCfg:on --out:build/docs/theindex.html build/docs"

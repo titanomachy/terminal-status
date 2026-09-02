@@ -6,6 +6,15 @@ This project follows Semantic Versioning.
 
 ### Added
 
+- Add Phase 2 semantic status themes built from `TerminalStyle`, with cyan,
+  green, red, yellow, and subdued default roles and no global presentation
+  state.
+- Add cell-equivalent Unicode and printable-ASCII marker and progress-bar
+  presets, plus the explicit `RenderOptions` foundation for per-call character,
+  color, width, metadata, pulse, and theme choices.
+- Export themes and render options from the façade, document their API, cover
+  exact presets and TerminalStyle's color-disable path with focused tests, and
+  add a finite customization example.
 - Add pure determinate and indeterminate progress models with checked monotonic
   updates, atomic completion, frozen elapsed time, lifetime rates, and ETA.
 - Add insertion-ordered multi-progress collections with stable non-reused task

@@ -1,9 +1,9 @@
-## Pure-Nim terminal status models and rendering.
+## Pure-Nim terminal status models and rendering foundations.
 ##
-## Phase 1 exposes shared contracts plus spinner, progress, multi-progress, and
-## step-tracker models. Importing this façade performs no output, terminal
-## detection, or background work.
+## The façade exposes shared contracts, component models, semantic themes,
+## marker presets, and render options. Importing it performs no output,
+## terminal detection, or background work.
 
-import terminal_status/[progress, spinners, steps, types]
+import terminal_status/[progress, rendering, spinners, steps, themes, types]
 
-export progress, spinners, steps, types
+export progress, rendering, spinners, steps, themes, types

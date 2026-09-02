@@ -3,7 +3,7 @@ import std/unittest
 import terminal_status
 
 suite "public imports":
-  test "the facade exports every Phase 1 model":
+  test "the facade exports models and Phase 2 presentation values":
     check statusPending is StatusState
     check progressDeterminate is ProgressMode
     check $TaskId(42) == "42"
@@ -17,3 +17,7 @@ suite "public imports":
 
     let tracker = initStepTracker(["Facade step"])
     check tracker.state == statusPending
+
+    check unicodeStatusMarkers().succeeded == "✓"
+    check defaultRenderOptions().theme.successStyle ==
+      defaultStatusTheme().successStyle
