@@ -1,9 +1,8 @@
 ## Pure-Nim terminal status models and rendering.
 ##
-## Phase 1 currently exposes the shared state, identifier, snapshot, and
-## validation contracts. Component models will be re-exported here as they are
-## implemented.
+## Phase 1 exposes shared model contracts and the pure spinner model. Importing
+## this façade performs no output, terminal detection, or background work.
 
-import terminal_status/types
+import terminal_status/[spinners, types]
 
-export types
+export spinners, types

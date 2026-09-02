@@ -6,6 +6,16 @@ This project follows Semantic Versioning.
 
 ### Added
 
+- Add the pure `terminal_status/spinners` API with validated custom styles,
+  Unicode/ASCII frame sets, and normative dots, line, arc, and pulse presets.
+- Add monotonic time-derived frame selection, mutable validated labels, and
+  idempotent success, failure, and cancellation transitions with frozen
+  elapsed time and frames.
+- Export spinners from the side-effect-free façade and cover preset values,
+  validation, copying, exact timing boundaries, ASCII fallback, and state
+  transitions with deterministic tests.
+- Add a finite spinner example, a hand-written spinner API guide, and a
+  reproducible README animation with its source asciicast.
 - Add the side-effect-free `terminal_status/types` API with status/progress
   enums, the model error hierarchy, stable hashable task IDs, and detached
   progress and step snapshots.
