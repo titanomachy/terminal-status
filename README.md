@@ -2,18 +2,54 @@
 
 TerminalStatus is a pure-Nim library under active development for terminal
 spinners, single and multi-progress bars, and ordered task step-trackers. The
-component model layer is complete, and Phase 2 now includes semantic themes,
-Unicode and ASCII marker presets, and explicit render options. Pure component
-renderers and live output are the next implementation slices.
+component model and pure rendering layers are complete: every renderer is
+deterministic, terminal-cell aware, ANSI-safe, and independent of terminal I/O.
+The managed live-output layer is the next implementation phase.
 
 The `0.1.x` line requires Nim 2.2.10 or newer and builds on
 `terminal_style >= 0.1.1` and `terminal_screen >= 0.1.1`. The normative design
 and API contracts live in [`specs/`](specs/).
 
-![A finite TerminalStatus arc-spinner demo](docs/images/spinner.gif)
+![TerminalStatus pure component renderers](docs/images/renderers.gif)
 
-[Download the source asciicast](docs/recordings/spinner.cast) or run the
-finite [`examples/spinner.nim`](examples/spinner.nim) demo locally.
+[Download the source asciicast](docs/recordings/renderers.cast) or run the
+finite [`examples/renderers.nim`](examples/renderers.nim) dashboard locally.
+
+## Pure rendering
+
+All components expose the same side-effect-free `render` shape. Pass one
+monotonic timestamp so every animation and metric in a multi-row frame agrees:
+
+```nim
+import std/[monotimes, times]
+import terminal_status
+
+let started = getMonoTime()
+var download = initProgressBar("Download", 100, "MB", started)
+download.advance(50, started + initDuration(seconds = 2))
+
+var options = defaultRenderOptions()
+options.characters = statusAscii
+options.useColor = false
+options.barWidth = 10
+
+doAssert download.render(
+  options,
+  started + initDuration(seconds = 2)
+) == "> Download [#####-----]  50% 50/100 MB 25.0 MB/s ETA 2s"
+```
+
+`render` is overloaded for `Spinner`, `ProgressBar`, `MultiProgress`, and
+`StepTracker`. A positive `width` is a maximum measured in terminal cells;
+rows are never padded, wide or combined graphemes are not split, and narrow
+progress rows shed elapsed, rate, ETA, and count metadata before shrinking the
+bar or label. Multi-row output has no trailing newline.
+
+Caller text is normalized to one safe row. SGR styles and OSC-8 hyperlinks are
+preserved and closed when color is enabled; terminal movement, erasure, title,
+clipboard, and other executable controls are removed. `useColor = false`
+removes both theme and caller ANSI. See the [pure rendering guide](docs/rendering.md)
+for metric formats, responsive reduction, and safety details.
 
 ## Themes and character presets
 
@@ -46,8 +82,8 @@ doAssert unicodeStatusMarkers().succeeded == "✓"
 The default semantic colors are cyan for running work, green for success and
 completed bars, red for failures, yellow for cancellation, and dim bright
 black for pending or secondary content. The disabled TerminalStyle path strips
-both theme styling and caller-provided ANSI; upcoming component renderers will
-use this path for `useColor = false`.
+both theme styling and caller-provided ANSI, so every renderer guarantees plain
+output for `useColor = false`.
 
 See the [themes and marker guide](docs/themes.md) and finite
 [`customization.nim`](examples/customization.nim) example for the full marker
@@ -59,15 +95,16 @@ Import the façade, choose a built-in preset, and sample frames whenever your
 application refreshes its display:
 
 ```nim
-import std/[monotimes, times]
+import std/[monotimes, strutils, times]
 import terminal_status
 
 let started = getMonoTime()
 var spinner = initSpinner("Indexing files", arcSpinner(), started)
 
-# Frame selection is pure and deterministic; no background timer is started.
+# Rendering and frame selection are pure; no background timer is started.
 let later = started + initDuration(milliseconds = 200)
 doAssert spinner.frame(now = later) == "◝"
+doAssert spinner.render(now = later).endsWith(" Indexing files")
 
 spinner.setLabel("Index complete")
 spinner.succeed(later)
@@ -107,6 +144,7 @@ doAssert download.eta(
   started + initDuration(seconds = 2)).get.inSeconds == 3
 
 download.complete(started + initDuration(seconds = 5))
+echo download.render(now = started + initDuration(seconds = 5))
 ```
 
 Rates are lifetime averages based on monotonic elapsed time. ETA is available
@@ -114,8 +152,8 @@ only for running determinate work with a positive rate and is rounded to the
 nearest millisecond. Terminal elapsed time and rate freeze at the first finish
 timestamp, and terminal ETA is absent.
 
-`initIndeterminateProgressBar` represents work without a total. Its future
-renderer derives pulse motion from the stored start timestamp, so it needs no
+`initIndeterminateProgressBar` represents work without a total. Its renderer
+derives pulse motion from the stored start timestamp, so it needs no
 per-frame model mutation. See the [Progress models guide](docs/progress.md) and
 the finite [`progress_bar.nim`](examples/progress_bar.nim) and
 [`indeterminate_bar.nim`](examples/indeterminate_bar.nim) examples.
@@ -133,6 +171,7 @@ let
 work.advance(compileId, 3)
 work.complete(uploadId)
 doAssert work.taskIds == @[compileId, uploadId]
+echo work.render()
 ```
 
 All mutations by ID reject unknown tasks without changing the collection.
@@ -147,6 +186,7 @@ var release = initStepTracker(["Build", "Test", "Publish"], "Release")
 release.start()
 release.setCurrentDetail("release mode")
 release.advance()
+echo release.render()
 ```
 
 Advancing succeeds the current step and starts the next; advancing the last
@@ -186,7 +226,7 @@ and their failure handling as runnable programs.
 | `terminal_status/progress` | Determinate/indeterminate progress metrics and ordered multi-progress tasks. |
 | `terminal_status/steps` | Ordered step state, details, failure, and cancellation. |
 | `terminal_status/themes` | Semantic TerminalStyle values and Unicode/ASCII marker presets. |
-| `terminal_status/rendering` | Explicit pure-render options; component renderers are the next Phase 2 slice. |
+| `terminal_status/rendering` | Pure component renderers, metrics, text safety, and responsive cell widths. |
 
 TerminalStatus uses TerminalStyle for ANSI-aware validation and terminal-cell
 measurement. The finite demo uses TerminalScreen for terminal detection and
@@ -209,6 +249,7 @@ nimble c -r examples/progress_bar.nim
 nimble c -r examples/indeterminate_bar.nim
 nimble c -r examples/multi_progress.nim
 nimble c -r examples/step_tracker.nim
+nimble c -r examples/renderers.nim -- --once
 nimble c -r examples/customization.nim -- --once
 nimble docs
 ```

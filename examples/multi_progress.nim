@@ -1,4 +1,4 @@
-## Stable IDs and insertion-order snapshots from a finite multi-progress model.
+## Stable IDs and insertion-ordered rows from a finite multi-progress renderer.
 
 import std/[monotimes, times]
 
@@ -16,8 +16,10 @@ work.complete(verifyId, started + initDuration(milliseconds = 200))
 work.complete(downloadId, started + initDuration(milliseconds = 300))
 
 doAssert work.taskIds == @[downloadId, verifyId]
-for task in work.tasks:
-  echo "#", task.id, " ", task.label, ": ", task.state
+var options = defaultRenderOptions()
+options.useColor = false
+options.barWidth = 8
+echo work.render(options, started + initDuration(milliseconds = 300))
 
 work.removeTask(verifyId)
 let publishId = work.addTask("Publish", 1, now = started)

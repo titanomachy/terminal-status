@@ -2,8 +2,8 @@
 
 `terminal_status/progress` provides determinate and indeterminate progress bars
 plus an insertion-ordered `MultiProgress` collection. These are pure in-memory
-models: the caller records work with explicit mutations, and a later rendering
-phase decides how bars and pulses look.
+models: the caller records work with explicit mutations, and the pure rendering
+layer decides how bars and pulses look.
 
 ## Determinate progress
 
@@ -22,6 +22,10 @@ doAssert download.eta(
   started + initDuration(seconds = 2)).get.inSeconds == 3
 
 download.complete(started + initDuration(seconds = 5))
+
+var options = defaultRenderOptions()
+options.useColor = false
+echo download.render(options, started + initDuration(seconds = 5))
 ```
 
 `advance` rejects negative increments, integer overflow, and completion beyond
@@ -39,7 +43,7 @@ and rates use the first finish timestamp, while ETA becomes absent.
 Use `initIndeterminateProgressBar` when no meaningful total exists. Its total,
 fraction, rate, and ETA are absent; `advance` and `setCompleted` raise
 `StatusStateError`. `complete`, `fail`, and `cancel` still provide the ordinary
-lifecycle. The future pure renderer derives pulse movement from the stored
+lifecycle. The pure renderer derives pulse movement from the stored
 start timestamp, so no model mutation or background timer is needed per frame.
 
 ## Multi-progress ownership
@@ -54,6 +58,7 @@ work.advance(first, 3)
 work.complete(second)
 
 doAssert work.taskIds == @[first, second]
+echo work.render()
 ```
 
 IDs begin at one, increase monotonically, and are not reused after removal.
@@ -66,3 +71,5 @@ See the finite
 [`progress_bar.nim`](../examples/progress_bar.nim),
 [`indeterminate_bar.nim`](../examples/indeterminate_bar.nim), and
 [`multi_progress.nim`](../examples/multi_progress.nim) examples.
+Rendering formats, width reduction, and text safety are covered in the
+[pure rendering guide](rendering.md).

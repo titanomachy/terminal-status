@@ -1,7 +1,4 @@
-## A finite determinate-progress model with exact rate and ETA samples.
-##
-## Rendering is introduced in Phase 2; this example prints model queries so it
-## remains deterministic and demonstrates the Phase 1 API directly.
+## A finite determinate-progress render with exact rate and ETA samples.
 
 import std/[monotimes, options, times]
 
@@ -12,16 +9,15 @@ var download = initProgressBar("Download packages", 10, "packages", started)
 
 download.setCompleted(4, started + initDuration(seconds = 2))
 let sampledAt = started + initDuration(seconds = 2)
+var renderOptions = defaultRenderOptions()
+renderOptions.useColor = false
+renderOptions.barWidth = 10
 
-echo download.label, ": ", download.completed, "/", download.total.get,
-  " ", download.unit
-echo "fraction: ", download.fraction.get
-echo "average rate: ", download.ratePerSecond(sampledAt).get, " packages/s"
-echo "ETA: ", download.eta(sampledAt).get.inSeconds, " s"
+echo download.render(renderOptions, sampledAt)
 
 download.complete(started + initDuration(seconds = 4))
 doAssert download.state == statusSucceeded
 doAssert download.completed == download.total.get
 doAssert download.elapsed(sampledAt).inSeconds == 4
 
-echo "finished: ", download.state
+echo download.render(renderOptions, download.finishedAt.get)

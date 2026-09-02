@@ -1,8 +1,8 @@
 ## A finite marker, theme, and custom-spinner presentation example.
 ##
-## Component renderers arrive in a later Phase 2 slice, so this example applies
-## TerminalStyle values directly to preview the same semantic presentation
-## contract. Use `--ascii` or `--no-color` to exercise explicit fallbacks.
+## This example previews the semantic presentation values used by the pure
+## component renderers. Use `--ascii` or `--no-color` to exercise explicit
+## fallbacks.
 
 import std/[monotimes, os, strutils, times]
 

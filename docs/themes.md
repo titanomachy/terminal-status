@@ -81,8 +81,9 @@ let plain = applyStyle(
 doAssert plain == "ready"
 ```
 
-The component renderers that consume this contract are the next Phase 2 slice.
-Until then, the finite [`customization.nim`](../examples/customization.nim)
-example previews the exact semantic styles, both marker sets, and a custom
-spinner preset. Run it with `--ascii`, `--no-color`, or `--once` to see each
-fallback independently.
+All component renderers consume this contract and remove both theme and caller
+ANSI whenever `useColor` is false. The finite
+[`customization.nim`](../examples/customization.nim) example previews the exact
+semantic styles, both marker sets, and a custom spinner preset. Run it with
+`--ascii`, `--no-color`, or `--once` to see each fallback independently. The
+[pure rendering guide](rendering.md) documents the shared renderer API.

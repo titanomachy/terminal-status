@@ -1,4 +1,4 @@
-## A finite, model-only spinner example.
+## A finite spinner renderer example.
 ##
 ## This example redraws one line itself because the LiveDisplay output layer is
 ## introduced in a later implementation phase. It uses TerminalScreen only for
@@ -14,6 +14,8 @@ let started = getMonoTime()
 var spinner = initSpinner("Indexing project", arcSpinner(), started)
 let ansiOutput = detectCapabilities(output = stdout).supportsAnsi
 let interval = spinner.style.intervalMs
+var options = defaultRenderOptions()
+options.useColor = ansiOutput
 
 if ansiOutput:
   stdout.hideCursor(flush = true)
@@ -23,13 +25,15 @@ try:
     for tick in 0 ..< 18:
       let sampleTime = started +
         initDuration(milliseconds = int64(tick * interval))
-      stdout.write "\r" & spinner.frame(now = sampleTime) & " " & spinner.label
+      stdout.write "\r" & spinner.render(options, sampleTime)
       stdout.flushFile()
       sleep(interval)
 
+  let finished = started + initDuration(milliseconds = int64(18 * interval))
   spinner.setLabel("Project indexed!")
-  spinner.succeed(started + initDuration(milliseconds = int64(18 * interval)))
-  stdout.write (if ansiOutput: "\r" else: "") & "✓ " & spinner.label & "\n"
+  spinner.succeed(finished)
+  stdout.write (if ansiOutput: "\r" else: "") &
+    spinner.render(options, finished) & "\n"
   stdout.flushFile()
   if ansiOutput:
     sleep(interval)

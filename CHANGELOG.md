@@ -6,6 +6,18 @@ This project follows Semantic Versioning.
 
 ### Added
 
+- Add pure render overloads for spinners, determinate and indeterminate
+  progress bars, insertion-ordered multi-progress collections, and step
+  trackers, with one caller-supplied monotonic timestamp per frame.
+- Add exact percentage, count, rate, ETA, elapsed, and duration formatting;
+  deterministic narrow-width reduction; and cell-aware Unicode/ASCII bars,
+  pulses, labels, details, and truncation.
+- Normalize model text to one safe row, retain and close SGR/OSC-8 controls,
+  drop terminal-moving and unrelated controls, and guarantee ANSI-free output
+  whenever color is disabled.
+- Add focused renderer tests, renderer-backed component examples, a finite
+  all-component dashboard, rendering documentation, and a reproducible README
+  animation with its source asciicast.
 - Add Phase 2 semantic status themes built from `TerminalStyle`, with cyan,
   green, red, yellow, and subdued default roles and no global presentation
   state.

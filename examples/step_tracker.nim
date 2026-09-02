@@ -1,4 +1,4 @@
-## A finite ordered step-tracker lifecycle with explicit timestamps.
+## A finite ordered step-tracker render with explicit timestamps.
 
 import std/[monotimes, options, times]
 
@@ -20,7 +20,6 @@ doAssert release.state == statusSucceeded
 doAssert release.currentIndex.get == release.len - 1
 doAssert release.elapsed(started + initDuration(seconds = 2)).inMilliseconds == 400
 
-echo release.title, ": ", release.state
-for step in release.steps:
-  echo "- ", step.label, ": ", step.state,
-    (if step.detail.len > 0: " (" & step.detail & ")" else: "")
+var renderOptions = defaultRenderOptions()
+renderOptions.useColor = false
+echo release.render(renderOptions, started + initDuration(seconds = 2))

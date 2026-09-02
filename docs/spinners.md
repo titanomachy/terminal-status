@@ -15,6 +15,7 @@ var spinner = initSpinner("Indexing files", arcSpinner(), started)
 # Animation is derived from a timestamp; this query does not mutate spinner.
 let later = started + initDuration(milliseconds = 200)
 doAssert spinner.frame(now = later) == "◝"
+echo spinner.render(now = later)
 
 spinner.setLabel("Index complete")
 spinner.succeed(later)
@@ -56,3 +57,7 @@ freezes elapsed time and frame selection. Repeating the same transition is an
 idempotent no-op. Trying a different terminal transition raises
 `StatusStateError`. Labels may still be replaced after termination so the
 caller can attach a final message.
+
+The renderer substitutes a semantic success, failure, or cancellation marker
+for terminal states and supports explicit Unicode/ASCII, color, and cell-width
+choices. See [pure component rendering](rendering.md) for the shared contract.

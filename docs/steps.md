@@ -22,6 +22,7 @@ release.advance(started + initDuration(milliseconds = 400))
 doAssert release.state == statusSucceeded
 doAssert release.elapsed(
   started + initDuration(seconds = 5)).inMilliseconds == 400
+echo release.render(now = started + initDuration(seconds = 5))
 ```
 
 `failCurrent` fails only the active step and leaves later steps pending.
@@ -36,3 +37,5 @@ step. Queries return detached `StepSnapshot` values, and invalid indexes raise
 `ValueError`.
 
 See the finite [`step_tracker.nim`](../examples/step_tracker.nim) example.
+See [pure component rendering](rendering.md) for running-step animation,
+terminal-cell width handling, and detail-before-label reduction.
