@@ -245,14 +245,45 @@ latest frame when it closes instead of logging every animation tick. Set
 visible frame; duplicate frames and color-only changes are suppressed. Plain
 output always strips ANSI.
 
+Caller-supplied frames have a deliberately strict boundary: logical rows use
+LF only and may contain safe SGR styles or well-formed OSC-8 hyperlinks, but
+carriage returns, tabs, terminal movement/erasure, title or clipboard controls,
+and malformed escapes raise `ValueError` before output or cached state changes.
+Pure renderers already produce valid frames.
+
 Displays are single-use and single-thread owned. They never close the borrowed
 stream, enter raw input mode, query terminal geometry, or create a refresh
 loop. Updates and close flush only at the configured points, while duplicate
 frames perform neither operation. Prefer `withLiveDisplay`, whose `finally`
 cleanup covers normal return and catchable Nim exceptions (not signals,
-process termination, defects, or `SIGKILL`). See the
+process termination, defects, or `SIGKILL`).
+
+TerminalStatus also composes inside an application-owned TerminalScreen
+session without taking over its input lifecycle:
+
+```nim
+import terminal_screen
+import terminal_status
+
+var sessionOptions = defaultSessionOptions()
+sessionOptions.rawMode = false
+sessionOptions.hideCursor = false
+sessionOptions.requireTerminal = false
+sessionOptions.monitorResize = false
+
+withTerminalSession screen, stdin, stdout, sessionOptions:
+  var liveOptions = defaultLiveDisplayOptions(stdout)
+  withLiveDisplay display, liveOptions:
+    display.update("TerminalStatus inside TerminalScreen")
+  doAssert screen.isOpen
+```
+
+See the
 [live output guide](docs/live-output.md) and finite
-[`live_output.nim`](examples/live_output.nim) example.
+[`live_output.nim`](examples/live_output.nim) example. For an application that
+already owns terminal state, [`screen_composition.nim`](examples/screen_composition.nim)
+shows a `LiveDisplay` inside a non-raw TerminalScreen session; closing the
+display leaves that surrounding session open and untouched.
 
 ## Modules
 
@@ -292,6 +323,7 @@ nimble c -r examples/step_tracker.nim
 nimble c -r examples/renderers.nim -- --once
 nimble c -r examples/customization.nim -- --once
 nimble c -r examples/live_output.nim
+nimble c -r examples/screen_composition.nim
 nimble docs
 ```
 

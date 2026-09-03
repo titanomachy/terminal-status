@@ -6,6 +6,11 @@ This project follows Semantic Versioning.
 
 ### Added
 
+- Reject unsafe caller-supplied live frames before output or cache mutation,
+  with complete control-class tests and explicit SGR/OSC-8 acceptance coverage.
+- Document single-thread row ownership and add a finite TerminalScreen
+  composition example plus integration tests proving a live display leaves a
+  surrounding non-raw session and terminal input modes untouched.
 - Add `terminal_status/live` with auto, forced-ANSI, and forced-plain output
   modes, a borrowed `stderr` default, and capability selection deferred until
   display open.

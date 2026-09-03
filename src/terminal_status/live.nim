@@ -1,8 +1,10 @@
 ## Explicit, bounded live output for rendered TerminalStatus frames.
 ##
 ## A live display borrows its output `File` and chooses ANSI redraw or plain
-## log output when opened. It never owns terminal input modes, terminal size,
-## a refresh timer, or the supplied stream.
+## log output when opened. Each display has one owning thread and uses no
+## global lock or background worker. It never owns, enters, or restores
+## terminal input modes, and it does not own terminal size, a refresh timer,
+## or the supplied stream.
 
 import std/[options, strutils, unicode]
 
@@ -244,9 +246,17 @@ proc open*(display: var LiveDisplay) =
 proc update*(display: var LiveDisplay; frame: string) =
   ## Validates and submits one complete logical frame.
   ##
+  ## A frame is empty or contains LF-separated rows without a trailing LF.
+  ## Safe SGR and well-formed OSC-8 controls are retained; carriage returns,
+  ## tabs, other C0/C1 controls, cursor movement, erasure, unrelated ANSI
+  ## controls, and malformed/incomplete escapes raise `ValueError` before
+  ## output or cached state changes.
+  ##
   ## ANSI mode redraws the owned rows. Plain final-only mode caches the latest
   ## frame without writing, while every-change mode logs changed visible
   ## frames. Plain modes strip safe SGR and OSC-8 sequences before output.
+  ## The owning thread must serialize updates with other writes to the same
+  ## terminal rows.
   if display.currentState != displayOpen:
     raise newException(LiveDisplayError,
       "live display must be open before update")

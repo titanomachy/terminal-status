@@ -1,4 +1,4 @@
-import std/[options, os, unittest]
+import std/[options, os, strutils, unittest]
 
 import terminal_status
 import terminal_screen
@@ -134,6 +134,60 @@ suite "live output strategies":
     display.close()
 
     check capture.finishCapture() == "safe\n"
+
+  test "safe SGR and OSC-8 controls pass validation":
+    var capture = openCapture("safe-controls")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = liveAnsi
+    options.flushWrites = false
+    var display = initLiveDisplay(options)
+    let frame = "\e[1;32mready\e[0m\n" &
+      "\e]8;;https://example.com\e\\docs\e]8;;\e\\"
+
+    display.open()
+    display.update(frame)
+    display.close()
+
+    check capture.finishCapture() ==
+      frame.replace("\n", "\r\n") & "\r\n"
+
+  test "every unsafe frame class is rejected before output or cache mutation":
+    var capture = openCapture("unsafe-controls")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = liveAnsi
+    options.flushWrites = true
+    var display = initLiveDisplay(options)
+    let unsafeFrames = [
+      "carriage\rreturn",
+      "tab\tcharacter",
+      "nul\x00character",
+      "delete\x7fcharacter",
+      "C1 \xC2\x9B control",
+      "cursor up \e[2A",
+      "erase line \e[2K",
+      "title \e]0;changed\a",
+      "clipboard \e]52;c;c2VjcmV0\a",
+      "two-byte escape \e7",
+      "incomplete CSI \e[31",
+      "incomplete OSC \e]8;;https://example.com",
+      "malformed CSI \e[\x01m",
+      "malformed OSC-8 \e]8;missing-uri-separator\a",
+      "OSC-8 control \e]8;;bad\ruri\a",
+      "trailing newline\n"
+    ]
+
+    display.open()
+    display.update("safe")
+    for frame in unsafeFrames:
+      expect ValueError:
+        display.update(frame)
+      check readFile(capture.path) == "safe"
+
+    display.update("final")
+    display.close()
+
+    check capture.finishCapture() ==
+      "safe" & clearingBytes(1) & "final\r\n"
 
   test "scoped plain output emits its final frame during exception cleanup":
     var capture = openCapture("scoped")

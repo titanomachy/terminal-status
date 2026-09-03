@@ -51,6 +51,20 @@ The finite [`live_output.nim`](../examples/live_output.nim) example uses auto
 mode by default. It also demonstrates `--every-change`, forced `--ansi`,
 `--clear`, and display-owned `--hide-cursor` behavior.
 
+## Complete-frame safety
+
+`update` accepts an empty frame or LF-separated logical rows with no trailing
+LF. It retains only safe SGR styling and well-formed OSC-8 hyperlinks. A
+carriage return, tab, other C0/C1 control, cursor movement, erasure, terminal
+title or clipboard operation, two-byte escape, unrelated OSC, or malformed or
+incomplete escape raises `ValueError` before anything is written or the cached
+final frame changes. This strict boundary prevents a caller-supplied frame
+from moving outside the rows owned by the display.
+
+Pure TerminalStatus renderers already satisfy this contract. If an application
+constructs frames itself, normalize untrusted labels through a renderer rather
+than passing arbitrary terminal byte strings directly to `update`.
+
 ## ANSI redraw and finalization
 
 ANSI mode owns only the rows written by its latest frame. The first frame is
@@ -90,3 +104,33 @@ For application logs, clear or close the display before writing and then redraw
 or create a new display. Two displays may target unrelated streams, but sharing
 the same terminal rows is a caller error; TerminalStatus keeps no global active
 display registry or lock.
+
+## TerminalScreen composition
+
+TerminalScreen and TerminalStatus have separate ownership boundaries. A
+TerminalScreen session may own input and platform state while a `LiveDisplay`
+borrows its output stream and owns only its rendered rows. Configure one owner
+for cursor visibility and keep all writes to those rows on the display's owning
+thread:
+
+```nim
+import terminal_screen
+import terminal_status
+
+var sessionOptions = defaultSessionOptions()
+sessionOptions.rawMode = false
+sessionOptions.hideCursor = false
+sessionOptions.requireTerminal = false
+sessionOptions.monitorResize = false
+
+withTerminalSession screen, stdin, stdout, sessionOptions:
+  var liveOptions = defaultLiveDisplayOptions(stdout)
+  withLiveDisplay display, liveOptions:
+    display.update("TerminalStatus inside TerminalScreen")
+  doAssert screen.isOpen
+```
+
+Closing the display neither closes the surrounding session nor enters or
+restores any input mode. The finite
+[`screen_composition.nim`](../examples/screen_composition.nim) example contains
+the complete runnable form.
