@@ -42,13 +42,21 @@ type
   LiveDisplayOptions* = object
     ## Per-display output and lifecycle options.
     ##
-    ## `output` is borrowed and is never closed by `LiveDisplay`.
+    ## `output` is borrowed and is never closed by `LiveDisplay`. A display is
+    ## single-thread owned; callers must serialize any other writes to the
+    ## same terminal rows.
     output*: File
+      ## Borrowed destination stream. The default is `stderr`.
     mode*: LiveMode
+      ## Requested output strategy, resolved once by `open`.
     plainPolicy*: PlainOutputPolicy
+      ## Redirected-output coalescing or changed-frame logging policy.
     finishPolicy*: FinishPolicy
+      ## Whether `close` leaves the last frame visible or erases its rows.
     hideCursor*: bool
+      ## Hides the cursor only in ANSI mode and restores it during cleanup.
     flushWrites*: bool
+      ## Flushes effective updates and close output when enabled.
 
   LiveDisplay* = object
     ## A single-use live output region with private mutable state.
@@ -144,6 +152,8 @@ proc terminalFrame(frame: string): string =
   frame.replace("\n", TerminalRowJoin)
 
 proc clearingBytes(rows: int): string =
+  # Starting after the final owned row, walk only the owned region. Clearing
+  # every old row makes both narrower text and fewer replacement rows safe.
   if rows <= 0:
     return ""
   result = "\r"
@@ -253,7 +263,10 @@ proc update*(display: var LiveDisplay; frame: string) =
 proc close*(display: var LiveDisplay) =
   ## Finalizes a display and releases its row/cursor ownership.
   ##
-  ## Closing is idempotent and never closes the borrowed output stream.
+  ## `finishKeep` advances below a retained ANSI frame; `finishClear` erases
+  ## it. Cursor visibility is restored only when this display hid it. Closing
+  ## is idempotent, performs at most one configured final flush, and never
+  ## closes the borrowed output stream.
   case display.currentState
   of displayClosed:
     return
@@ -312,7 +325,8 @@ template withLiveDisplay*(name: untyped, options: LiveDisplayOptions,
                           body: untyped) =
   ## Opens a scoped display named `name` and always closes it when `body`
   ## returns or raises a catchable Nim exception. If both the body and cleanup
-  ## fail, the original body exception is preserved.
+  ## fail, the original body exception is preserved. Process termination,
+  ## signals, defects, and `SIGKILL` are outside this guarantee.
   block:
     var name = initLiveDisplay(options)
     name.open()

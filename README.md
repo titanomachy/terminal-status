@@ -1,6 +1,6 @@
 # TerminalStatus
 
-TerminalStatus is a pure-Nim library under active development for terminal
+`terminal_status` is a pure-Nim library under active development for terminal
 spinners, single and multi-progress bars, and ordered task step-trackers. Its
 component renderers are deterministic, terminal-cell aware, and ANSI-safe;
 the explicit live layer can redraw an ANSI terminal or coalesce redirected
@@ -232,6 +232,13 @@ withLiveDisplay display, options:
   display.update("Download complete\n100% complete")
 ```
 
+In ANSI mode a changed frame clears exactly the rows previously owned by the
+display before drawing its replacement, so narrower or shorter frames leave no
+stale text and unrelated terminal output is not erased. `finishKeep` moves
+subsequent output below the retained frame; set `finishPolicy = finishClear` to
+erase the region on close. Cursor hiding is opt-in and ownership-aware:
+`hideCursor = true` restores visibility exactly once during cleanup.
+
 Redirected output defaults to `plainFinalOnly`, so the example emits only the
 latest frame when it closes instead of logging every animation tick. Set
 `mode = livePlain` and `plainPolicy = plainEveryChange` to write every changed
@@ -240,9 +247,11 @@ output always strips ANSI.
 
 Displays are single-use and single-thread owned. They never close the borrowed
 stream, enter raw input mode, query terminal geometry, or create a refresh
-loop. Prefer `withLiveDisplay`, whose `finally` cleanup covers normal return
-and catchable Nim exceptions (not signals, process termination, defects, or
-`SIGKILL`). See the [live output guide](docs/live-output.md) and finite
+loop. Updates and close flush only at the configured points, while duplicate
+frames perform neither operation. Prefer `withLiveDisplay`, whose `finally`
+cleanup covers normal return and catchable Nim exceptions (not signals,
+process termination, defects, or `SIGKILL`). See the
+[live output guide](docs/live-output.md) and finite
 [`live_output.nim`](examples/live_output.nim) example.
 
 ## Modules

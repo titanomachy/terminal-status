@@ -48,7 +48,31 @@ options.plainPolicy = plainEveryChange
 ```
 
 The finite [`live_output.nim`](../examples/live_output.nim) example uses auto
-mode by default and accepts `--every-change` to show the opt-in log policy.
+mode by default. It also demonstrates `--every-change`, forced `--ansi`,
+`--clear`, and display-owned `--hide-cursor` behavior.
+
+## ANSI redraw and finalization
+
+ANSI mode owns only the rows written by its latest frame. The first frame is
+written directly with logical LF separators converted to CRLF. A changed frame
+returns to the first owned row, erases every previously owned row, returns to
+that first row, and writes the replacement. Consequently, shorter text and
+frames with fewer rows cannot leave stale content, and rows outside the owned
+region are untouched. Byte-identical updates perform no write or flush; an
+empty update clears the current region and owns no rows.
+
+`finishKeep` retains a non-empty ANSI frame and writes one CRLF so later output
+starts below it. `finishClear` erases the owned rows without adding a newline.
+Both policies write nothing when no frame is owned. Plain final-only output
+uses the same policy intent: keep emits the cached snapshot and clear
+suppresses it, while already-written every-change log entries cannot be
+retracted.
+
+Cursor hiding is opt-in. When `hideCursor` is true and ANSI mode is selected,
+the display records ownership only after writing the hide command and writes
+exactly one show command during `close`. It never shows a cursor it did not
+hide. Close is idempotent, flushes finalization and cursor restoration together
+when configured, and leaves the borrowed `File` open.
 
 ## Ownership and lifecycle
 
@@ -61,3 +85,8 @@ Do not let another writer modify the display's terminal rows while it is open.
 TerminalStatus does not enter raw mode, create a TerminalScreen session, query
 terminal geometry, or run a background refresh loop. Applications choose
 renderer widths and schedule their own refreshes.
+
+For application logs, clear or close the display before writing and then redraw
+or create a new display. Two displays may target unrelated streams, but sharing
+the same terminal rows is a caller error; TerminalStatus keeps no global active
+display registry or lock.

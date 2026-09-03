@@ -1,6 +1,7 @@
 import std/[options, os, unittest]
 
 import terminal_status
+import terminal_screen
 
 let
   repositoryDir = currentSourcePath().parentDir.parentDir
@@ -24,6 +25,23 @@ proc finishCapture(capture: var tuple[path: string, output: File]): string =
   capture.output.close()
   result = readFile(capture.path)
   removeFile(capture.path)
+
+proc clearingBytes(rows: int): string =
+  ## Mirrors the normative algorithm while sourcing movement codes from
+  ## TerminalScreen, so these tests also follow its command encoding.
+  if rows <= 0:
+    return ""
+  result = "\r"
+  if rows > 1:
+    result.add cursorUpCode(rows - 1)
+  for row in 0 ..< rows:
+    result.add "\e[2K"
+    if row < rows - 1:
+      result.add cursorDownCode(1)
+      result.add '\r'
+  if rows > 1:
+    result.add cursorUpCode(rows - 1)
+  result.add '\r'
 
 suite "live output strategies":
   test "defaults borrow stderr and defer all effects until open":
@@ -132,3 +150,137 @@ suite "live output strategies":
 
     check caught
     check capture.finishCapture() == "last valid frame\n"
+
+suite "ANSI redraw and cleanup":
+  test "first draw is direct and duplicate updates write nothing":
+    var capture = openCapture("ansi-duplicate")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = liveAnsi
+    options.flushWrites = false
+    var display = initLiveDisplay(options)
+
+    display.open()
+    display.update("one")
+    display.update("one")
+    display.update("two")
+    display.close()
+
+    check capture.finishCapture() ==
+      "one" & clearingBytes(1) & "two\r\n"
+
+  test "growing and shrinking frames clear exactly the previously owned rows":
+    var capture = openCapture("ansi-resize")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = liveAnsi
+    options.flushWrites = false
+    var display = initLiveDisplay(options)
+
+    display.open()
+    display.update("a")
+    display.update("b\nc\nd")
+    display.update("e")
+    display.close()
+
+    check capture.finishCapture() ==
+      "a" & clearingBytes(1) & "b\r\nc\r\nd" &
+      clearingBytes(3) & "e\r\n"
+
+  test "an empty update clears the owned region and leaves no final row":
+    var capture = openCapture("ansi-empty")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = liveAnsi
+    options.flushWrites = false
+    var display = initLiveDisplay(options)
+
+    display.open()
+    display.update("first\nsecond")
+    display.update("")
+    display.close()
+
+    check capture.finishCapture() ==
+      "first\r\nsecond" & clearingBytes(2)
+
+  test "finishClear erases the region and repeated close is a no-op":
+    var capture = openCapture("ansi-clear")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = liveAnsi
+    options.finishPolicy = finishClear
+    options.flushWrites = false
+    var display = initLiveDisplay(options)
+
+    display.open()
+    display.update("top\nbottom")
+    display.close()
+    display.close()
+
+    check display.state == displayClosed
+    check display.effectiveMode == some(liveAnsi)
+    check capture.finishCapture() ==
+      "top\r\nbottom" & clearingBytes(2)
+
+  test "cursor restoration occurs exactly when this display hid it":
+    var capture = openCapture("ansi-cursor")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = liveAnsi
+    options.finishPolicy = finishClear
+    options.hideCursor = true
+    options.flushWrites = false
+    var display = initLiveDisplay(options)
+
+    display.open()
+    display.update("owned")
+    display.close()
+    display.close()
+
+    check capture.finishCapture() ==
+      HideCursorCode & "owned" & clearingBytes(1) & ShowCursorCode
+
+  test "configured update and close writes are flushed":
+    var capture = openCapture("ansi-flush")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = liveAnsi
+    options.flushWrites = true
+    var display = initLiveDisplay(options)
+
+    display.open()
+    display.update("visible")
+    check readFile(capture.path) == "visible"
+    display.close()
+    check readFile(capture.path) == "visible\r\n"
+
+    capture.output.write("tail")
+    capture.output.flushFile()
+    check capture.finishCapture() == "visible\r\ntail"
+
+  test "plain finishClear suppresses a cached final-only frame":
+    var capture = openCapture("plain-clear")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = livePlain
+    options.finishPolicy = finishClear
+    var display = initLiveDisplay(options)
+
+    display.open()
+    display.update("not emitted")
+    display.close()
+
+    check capture.finishCapture() == ""
+
+  test "scoped ANSI cleanup clears rows and restores its cursor on exceptions":
+    var capture = openCapture("ansi-scoped")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = liveAnsi
+    options.finishPolicy = finishClear
+    options.hideCursor = true
+    options.flushWrites = false
+    var caught = false
+
+    try:
+      withLiveDisplay display, options:
+        display.update("working")
+        raise newException(IOError, "deliberate ANSI body failure")
+    except IOError as error:
+      caught = error.msg == "deliberate ANSI body failure"
+
+    check caught
+    check capture.finishCapture() ==
+      HideCursorCode & "working" & clearingBytes(1) & ShowCursorCode

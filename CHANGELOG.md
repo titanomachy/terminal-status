@@ -12,6 +12,14 @@ This project follows Semantic Versioning.
 - Add redirected-output coalescing that emits only the latest frame at close by
   default, plus opt-in changed-frame logging with ANSI stripping and duplicate
   suppression.
+- Add byte-exact bounded ANSI redraws for one or more rows, including stale-row
+  removal when frames shrink and no-op handling for duplicate frames.
+- Add keep-final and clear-final cleanup, display-owned cursor restoration,
+  idempotent and exception-safe close, configurable flushing, and borrowed
+  stream preservation.
+- Expand the live example and guide with redraw/finalization controls, add
+  focused lifecycle tests, and regenerate the README dashboard recording
+  through the completed live output layer.
 - Export live output through the façade, migrate the finite renderer dashboard
   to the live API, and add focused tests, generated API documentation, a
   live-output guide, and a finite strategy example.
