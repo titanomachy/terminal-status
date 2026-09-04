@@ -2,7 +2,14 @@
 
 This project follows Semantic Versioning.
 
-## [Unreleased]
+## [0.1.1] - 2026-09-04
+
+### Fixed
+
+- Avoid a Nim 2.0 `RangeDefect` when validating ANSI-stripped text containing
+  only Unicode whitespace.
+- Make final-write failure coverage deterministic across Windows compiler and
+  C runtime combinations.
 
 ### Changed
 
