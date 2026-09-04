@@ -381,23 +381,19 @@ suite "ANSI redraw and cleanup":
     check capture.finishCapture() == ""
 
   test "a final write failure still closes the display":
-    let path = capturePath("read-only-stream")
-    writeFile(path, "")
-    var readOnlyOutput: File
-    check open(readOnlyOutput, path, fmRead)
-    var options = defaultLiveDisplayOptions(readOnlyOutput)
+    var capture = openCapture("failed-final-write")
+    var options = defaultLiveDisplayOptions(capture.output)
     options.mode = livePlain
     var display = initLiveDisplay(options)
 
     display.open()
     display.update("cannot be written")
+    display.failNextFinalWriteForTesting()
     expect IOError:
       display.close()
     check display.state == displayClosed
     display.close()
-    readOnlyOutput.close()
-    check readFile(path) == ""
-    removeFile(path)
+    check capture.finishCapture() == ""
 
   test "scoped ANSI cleanup clears rows and restores its cursor on exceptions":
     var capture = openCapture("ansi-scoped")

@@ -69,6 +69,8 @@ type
     ownedRows: int
     lastPlainFrame: string
     cursorHidden: bool
+    when defined(terminalStatusTest):
+      failNextFinalWrite: bool
 
 const
   EraseWholeLine = "\e[2K"
@@ -93,6 +95,13 @@ proc initLiveDisplay*(
 ): LiveDisplay =
   ## Initializes a new display without querying or writing to the terminal.
   LiveDisplay(options: options, currentState: displayNew)
+
+when defined(terminalStatusTest):
+  proc failNextFinalWriteForTesting*(display: var LiveDisplay) =
+    ## Injects an `IOError` at the next final-frame write during `close`.
+    ##
+    ## This deterministic test seam is unavailable in ordinary package builds.
+    display.failNextFinalWrite = true
 
 proc state*(display: LiveDisplay): LiveDisplayState =
   ## Returns the display's current lifecycle state.
@@ -198,6 +207,13 @@ proc writePlainUpdate(display: var LiveDisplay; frame: string) =
     if plainFrame.len > 0 and display.options.flushWrites:
       display.options.output.flushFile()
 
+proc writeFinalBytes(display: var LiveDisplay; bytes: string) =
+  when defined(terminalStatusTest):
+    if display.failNextFinalWrite:
+      display.failNextFinalWrite = false
+      raise newException(IOError, "injected final write failure")
+  display.options.output.write(bytes)
+
 proc open*(display: var LiveDisplay) =
   ## Opens a new display and selects its effective output mode once.
   ##
@@ -294,15 +310,15 @@ proc close*(display: var LiveDisplay) =
       of liveAnsi:
         if display.ownedRows > 0:
           if display.options.finishPolicy == finishKeep:
-            display.options.output.write(TerminalRowJoin)
+            display.writeFinalBytes(TerminalRowJoin)
           else:
-            display.options.output.write(clearingBytes(display.ownedRows))
+            display.writeFinalBytes(clearingBytes(display.ownedRows))
           wrote = true
       of livePlain:
         if display.options.plainPolicy == plainFinalOnly and
             display.options.finishPolicy == finishKeep and
             display.cachedFrame.len > 0:
-          display.options.output.write(display.cachedFrame & "\n")
+          display.writeFinalBytes(display.cachedFrame & "\n")
           wrote = true
       of liveAuto:
         raise newException(Defect,
