@@ -6,6 +6,10 @@ This project follows Semantic Versioning.
 
 ### Added
 
+- Complete Phase 5 release readiness with package compilation, standalone
+  example checking, post-generation artifact validation, and a composite
+  default/ARC/ORC release check, plus contributing, third-party notice, and
+  clean-checkout release guides consistent with the terminal suite.
 - Complete the Phase 5 examples and documentation handoff with the normative
   finite example set, including caller-driven live refresh and isolated
   redirected final-only output; expand installation and lifecycle guidance,

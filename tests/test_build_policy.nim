@@ -106,6 +106,32 @@ suite "repository build policy":
     check "task testOrc," in packageMetadata
     check "runTests(\"orc\")" in packageMetadata
 
+  test "release tasks and handoff documents remain complete":
+    let packageMetadata = readFile(repositoryDir / "terminal_status.nimble")
+    for taskName in [
+      "compilePackage", "test", "testArc", "testOrc", "examples",
+      "suiteIntegration", "docs", "artifactPolicy", "releaseCheck"
+    ]:
+      check ("task " & taskName & ",") in packageMetadata
+
+    for releaseStep in [
+      "nimble check", "nimble compilePackage", "nimble test",
+      "nimble testArc", "nimble testOrc", "nimble examples", "nimble docs",
+      "nimble artifactPolicy"
+    ]:
+      check ("exec \"" & releaseStep & "\"") in packageMetadata
+
+    for document in [
+      "CONTRIBUTING.md", "RELEASING.md", "THIRD_PARTY_NOTICES.md"
+    ]:
+      check fileExists(repositoryDir / document)
+
+    let readme = readFile(repositoryDir / "README.md")
+    check "nimble releaseCheck" in readme
+    check "CONTRIBUTING.md" in readme
+    check "RELEASING.md" in readme
+    check "THIRD_PARTY_NOTICES.md" in readme
+
   test "correctness tests contain no timing sleeps":
     let sleepCall = "sl" & "eep"
     for testFile in walkFiles(repositoryDir / "tests" / "test_*.nim"):

@@ -135,7 +135,8 @@ and refresh it. Terminal transitions freeze elapsed time and frame selection.
 Repeating the same success, failure, or cancellation is harmless, while
 switching terminal outcomes raises `StatusStateError`. See the
 [Spinner model guide](docs/spinners.md) for presets, customization, ownership,
-and transition behavior.
+and transition behavior, and run the finite
+[`spinner.nim`](examples/spinner.nim) example for a caller-driven animation.
 
 ## Progress
 
@@ -395,33 +396,29 @@ remain under `build/`. Hand-written source, tests, examples, and documentation
 remain in their normal repository directories.
 
 ```sh
-nimble check
-nim c --path:src src/terminal_status.nim
+nimble compilePackage
 nimble test
 nimble testArc
 nimble testOrc
-nimble c -r examples/shared_types.nim
-nimble c -r examples/validation.nim
-nimble c -r examples/deterministic_testing.nim
-nimble c -r examples/spinner.nim
-nimble c -r examples/progress_bar.nim
-nimble c -r examples/indeterminate_bar.nim
-nimble c -r examples/multi_progress.nim
-nimble c -r examples/step_tracker.nim
-nimble c -r examples/live_status.nim
-nimble c -r examples/redirected_output.nim
-nimble c -r examples/renderers.nim -- --once
-nimble c -r examples/customization.nim -- --once
-nimble c -r examples/live_output.nim
-nimble c -r examples/screen_composition.nim
-nimble c -r examples/api_facade.nim
-nimble c -r -d:focusedImports examples/api_facade.nim
+nimble examples
 nimble suiteIntegration
 nimble docs
+nimble releaseCheck
 ```
 
+`nimble releaseCheck` is the standalone release gate: it validates Nimble
+metadata, compiles the façade, runs the same suite with the default memory
+manager plus ARC and ORC, checks every standalone finite example, generates
+the documentation, and performs a final artifact-placement audit. The
+development-only `interoperability.nim` example is checked by
+`suiteIntegration` when its sibling packages are available.
+
 The documentation task writes generated API documentation and indexes to
-`build/docs/`; it does not create the conventional `htmldocs/` directory.
+`build/docs/`; it does not create the conventional `htmldocs/` directory. See
+[CONTRIBUTING.md](CONTRIBUTING.md) for change requirements,
+[RELEASING.md](RELEASING.md) for the clean-checkout release procedure, and
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for dependency and source
+attribution.
 
 The default, ARC, and ORC test tasks run the same sorted focused suite. Model
 and renderer assertions use injected monotonic timestamps, live-output tests
