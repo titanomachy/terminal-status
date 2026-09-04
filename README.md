@@ -1,18 +1,91 @@
 # TerminalStatus
 
+[![CI](https://github.com/titanomachy/terminal-status/actions/workflows/ci.yml/badge.svg)](https://github.com/titanomachy/terminal-status/actions/workflows/ci.yml)
+
 `terminal_status` is a pure-Nim library under active development for terminal
 spinners, single and multi-progress bars, and ordered task step-trackers. Its
 component renderers are deterministic, terminal-cell aware, and ANSI-safe;
 the explicit live layer can redraw an ANSI terminal or coalesce redirected
 output without starting a thread or owning terminal input state.
 
-The `0.1.x` line requires Nim 2.2.10 or newer and builds on
-`terminal_style >= 0.1.1` and `terminal_screen >= 0.1.1`. The normative design
-and API contracts live in [`specs/`](specs/).
+## Platform support
+
+TerminalStatus targets Linux, macOS, and Windows. GitHub Actions runs the full
+test suite on all three operating systems with Nim 2.0.0, Nim 2.2.x, and the
+latest stable compiler. Live ANSI behavior depends on the capabilities of the
+borrowed terminal; redirected files and pipes use deterministic plain output.
+
+## Requirements
+
+- Nim 2.0.0 or newer
+- [`terminal_style`](https://github.com/titanomachy/terminal-style) 0.1.1 or newer
+- [`terminal_screen`](https://github.com/titanomachy/terminal-screen) 0.1.1 or newer
+- No runtime dependencies beyond `terminal_style` and `terminal_screen`
+
+## TerminalDeck
+
+TerminalStatus is the status and progress component library in TerminalDeck,
+a set of focused Nim terminal packages that compose through ordinary strings
+and shared terminal-width and styling rules:
+
+```text
+TerminalDeck
+├── Foundations
+│   ├── TerminalStyle
+│   └── TerminalScreen
+├── Output components
+│   ├── TerminalStatus  ← this package
+│   ├── TerminalLayout
+│   ├── TerminalTable
+│   └── TerminalGraph
+└── Interaction
+    ├── TerminalPrompt
+    └── TerminalWidgets
+```
+
+This diagram describes the suite, not the dependency graph. TerminalStatus
+depends only on TerminalStyle and TerminalScreen; the other packages can
+consume its rendered strings without adapters or reverse dependencies.
+
+## Table of contents
+
+- [Platform support](#platform-support)
+- [Requirements](#requirements)
+- [TerminalDeck](#terminaldeck)
+- [Table of contents](#table-of-contents)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [API overview](#api-overview)
+  - [Themes and character presets](#themes-and-character-presets)
+  - [Spinner](#spinner)
+  - [Progress](#progress)
+  - [Multi-progress](#multi-progress)
+  - [Steps](#steps)
+  - [Shared contracts](#shared-contracts)
+  - [Live output strategies](#live-output-strategies)
+- [Focused modules](#focused-modules)
+- [Suite interoperability](#suite-interoperability)
+- [Examples](#examples)
+- [Development and documentation](#development-and-documentation)
+- [Attribution and license](#attribution-and-license)
 
 ## Installation
 
-Add TerminalStatus to your application's Nimble file:
+Install the current package and its dependencies with Nimble:
+
+```sh
+nimble install terminal_status
+```
+
+Or install directly from GitHub:
+
+```sh
+nimble install https://github.com/titanomachy/terminal-style
+nimble install https://github.com/titanomachy/terminal-screen
+nimble install https://github.com/titanomachy/terminal-status
+```
+
+You can also add TerminalStatus to your application's Nimble file:
 
 ```nim
 requires "terminal_status >= 0.1.0"
@@ -23,12 +96,22 @@ TerminalTable, TerminalGraph, TerminalPrompt, and TerminalWidgets are not
 runtime dependencies; they may consume rendered status strings at the ordinary
 string boundary.
 
+Then import the complete public API:
+
+```nim
+import terminal_status
+```
+
+## Quick start
+
 ![TerminalStatus pure component renderers](docs/images/renderers.gif)
 
 [Download the source asciicast](docs/recordings/renderers.cast) or run the
 finite [`examples/renderers.nim`](examples/renderers.nim) dashboard locally.
 
-## Pure rendering
+```sh
+nim r --path:src examples/renderers.nim --once
+```
 
 All components expose the same side-effect-free `render` shape. Pass one
 monotonic timestamp so every animation and metric in a multi-row frame agrees:
@@ -63,6 +146,22 @@ preserved and closed when color is enabled; terminal movement, erasure, title,
 clipboard, and other executable controls are removed. `useColor = false`
 removes both theme and caller ANSI. See the [pure rendering guide](docs/rendering.md)
 for metric formats, responsive reduction, and safety details.
+
+## API overview
+
+| Component | Main API | Purpose |
+| --- | --- | --- |
+| [Themes and character presets](#themes-and-character-presets) | `StatusTheme`, `StatusCharacters`, `RenderOptions` | Explicit color, marker, character, width, and metadata choices |
+| [Spinner](#spinner) | `Spinner`, `SpinnerStyle`, `initSpinner`, `render` | Time-derived activity frames and terminal outcomes |
+| [Progress](#progress) | `ProgressBar`, `initProgressBar`, `initIndeterminateProgressBar` | Validated determinate metrics and indeterminate pulse rendering |
+| [Multi-progress](#multi-progress) | `MultiProgress`, `TaskId` | Insertion-ordered tasks with stable, non-reused IDs |
+| [Steps](#steps) | `StepTracker`, `StepSnapshot` | Ordered workflows with success, failure, and cancellation |
+| [Shared contracts](#shared-contracts) | `StatusState`, errors, snapshots, validation helpers | Common lifecycle, identity, ownership, and timing rules |
+| [Live output strategies](#live-output-strategies) | `LiveDisplay`, `withLiveDisplay` | Explicit ANSI redraws or coalesced redirected output |
+
+Most applications can import `terminal_status`. Use a
+[focused module](#focused-modules) when you want a narrower compile-time or
+dependency boundary.
 
 ## Themes and character presets
 
@@ -302,7 +401,7 @@ that already owns terminal state, [`screen_composition.nim`](examples/screen_com
 shows a `LiveDisplay` inside a non-raw TerminalScreen session; closing the
 display leaves that surrounding session open and untouched.
 
-## Modules
+## Focused modules
 
 | Module | Available responsibility |
 | --- | --- |
@@ -389,7 +488,40 @@ TerminalStyle and TerminalScreen source trees, then verifies TerminalLayout
 and TerminalTable composition when those development-only siblings are
 available.
 
-## Development
+## Examples
+
+These finite programs are included in [`examples/`](examples/). Run them from
+the repository root after installing the package dependencies.
+
+| Example | Demonstrates | Run |
+| --- | --- | --- |
+| [`api_facade.nim`](examples/api_facade.nim) | Complete façade and focused imports | `nim r --path:src examples/api_facade.nim` |
+| [`customization.nim`](examples/customization.nim) | Themes, markers, custom spinner frames, ASCII, and no-color modes | `nim r --path:src examples/customization.nim --once` |
+| [`deterministic_testing.nim`](examples/deterministic_testing.nim) | Injected monotonic time without sleeps | `nim r --path:src examples/deterministic_testing.nim` |
+| [`indeterminate_bar.nim`](examples/indeterminate_bar.nim) | Deterministic indeterminate pulse positions | `nim r --path:src examples/indeterminate_bar.nim` |
+| [`live_output.nim`](examples/live_output.nim) | Live output and cleanup strategies | `nim r --path:src examples/live_output.nim` |
+| [`live_status.nim`](examples/live_status.nim) | Caller-owned finite refresh loop | `nim r --path:src examples/live_status.nim` |
+| [`multi_progress.nim`](examples/multi_progress.nim) | Multiple ordered tasks and stable IDs | `nim r --path:src examples/multi_progress.nim` |
+| [`progress_bar.nim`](examples/progress_bar.nim) | Determinate counts, rate, and ETA | `nim r --path:src examples/progress_bar.nim` |
+| [`redirected_output.nim`](examples/redirected_output.nim) | Final-only plain output for a file or pipe | `nim r --path:src examples/redirected_output.nim` |
+| [`renderers.nim`](examples/renderers.nim) | Dashboard containing every renderer | `nim r --path:src examples/renderers.nim --once` |
+| [`screen_composition.nim`](examples/screen_composition.nim) | LiveDisplay inside a TerminalScreen session | `nim r --path:src examples/screen_composition.nim` |
+| [`shared_types.nim`](examples/shared_types.nim) | States, IDs, snapshots, and timing contracts | `nim r --path:src examples/shared_types.nim` |
+| [`spinner.nim`](examples/spinner.nim) | Finite caller-driven spinner animation | `nim r --path:src examples/spinner.nim` |
+| [`step_tracker.nim`](examples/step_tracker.nim) | Ordered step lifecycle | `nim r --path:src examples/step_tracker.nim` |
+| [`validation.nim`](examples/validation.nim) | Catchable validation errors | `nim r --path:src examples/validation.nim` |
+
+The development-only [`interoperability.nim`](examples/interoperability.nim)
+example additionally needs sibling TerminalLayout and TerminalTable source
+trees. Its complete compile command is in [Suite interoperability](#suite-interoperability).
+
+To check every standalone example without running its animation loop, use:
+
+```sh
+nimble examples
+```
+
+## Development and documentation
 
 Compiler products, caches, test executables, and generated documentation must
 remain under `build/`. Hand-written source, tests, examples, and documentation
@@ -426,3 +558,15 @@ use unique captures beneath `build/test-tmp/`, and isolated import probes must
 produce no output or terminal side effects. See the
 [deterministic testing guide](docs/testing.md) for the test matrix, fixtures,
 stream-isolation rules, and focused commands.
+
+The [normative specifications](specs/00-index.md) document architecture,
+models, rendering, live output, quality, and build-output policy. Generate the
+public API reference beneath `build/docs/` with `nimble docs`.
+
+## Attribution and license
+
+TerminalStatus is original Nim code by titanomachy and is released under the
+[MIT License](LICENSE). It uses the separately licensed TerminalStyle and
+TerminalScreen packages; no third-party source code is incorporated into this
+repository. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for dependency
+roles and attribution details.

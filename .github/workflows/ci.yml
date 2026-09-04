@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / Nim ${{ matrix.nim }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        nim: ["2.0.0", "2.2.x", "stable"]
+
+    steps:
+      - uses: actions/checkout@v7
+      - name: Set up Nim
+        uses: jiro4989/setup-nim-action@v2
+        with:
+          nim-version: ${{ matrix.nim }}
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check package metadata
+        run: nimble check
+      - name: Compile public facade
+        run: nimble compilePackage -y
+      - name: Run tests with the default memory manager
+        run: nimble test -y
+      - name: Run tests with ARC
+        run: nimble testArc -y
+      - name: Run tests with ORC
+        run: nimble testOrc -y
+      - name: Check examples
+        run: nimble examples -y
+      - name: Generate API documentation
+        if: matrix.os == 'ubuntu-latest' && matrix.nim == 'stable'
+        run: nimble docs -y
+      - name: Verify generated-artifact placement
+        run: nimble artifactPolicy -y

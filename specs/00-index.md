@@ -33,7 +33,7 @@ affected spec and tests in the same change.
 ## Version and compatibility target
 
 - Package line: `0.1.x`.
-- Nim lower bound: preserve the repository's current `nim >= 2.2.10`.
+- Nim lower bound: `nim >= 2.0.0`.
 - Required suite APIs: `terminal_style >= 0.1.1` and
   `terminal_screen >= 0.1.1`.
 - Platforms: the same POSIX and Windows targets supported by TerminalScreen.
@@ -45,4 +45,3 @@ The phrase “component model” means `Spinner`, `ProgressBar`, `MultiProgress`
 or `StepTracker`. “Frame” means one or more `\n`-separated logical rows returned
 by a pure renderer. “Terminal state” means a finite model state, not the
 operating system's terminal input mode.
-

@@ -49,11 +49,26 @@ suite "repository build policy":
     check "/build/" in ignoreRules
     check "skipDirs      = @[\"build\", \"PLANS\", \"specs\"]" in packageMetadata
 
-  test "package constraints match the Phase 0 contract":
+  test "package constraints match the compatibility contract":
     let packageMetadata = readFile(repositoryDir / "terminal_status.nimble")
-    check "requires \"nim >= 2.2.10\"" in packageMetadata
-    check "requires \"https://github.com/titanomachy/terminal-screen.git >= 0.1.1\"" in packageMetadata
+    check "requires \"nim >= 2.0.0\"" in packageMetadata
+    check "requires \"terminal_screen >= 0.1.1\"" in packageMetadata
     check "requires \"terminal_style >= 0.1.1\"" in packageMetadata
+
+  test "GitHub CI covers the supported compilers and operating systems":
+    let workflowPath = repositoryDir / ".github" / "workflows" / "ci.yml"
+    check fileExists(workflowPath)
+    if fileExists(workflowPath):
+      let workflow = readFile(workflowPath)
+      for operatingSystem in [
+        "ubuntu-latest", "macos-latest", "windows-latest"
+      ]:
+        check operatingSystem in workflow
+      for compiler in ["2.0.0", "2.2.x", "stable"]:
+        check compiler in workflow
+      check "nimble test -y" in workflow
+      check "nimble testArc -y" in workflow
+      check "nimble testOrc -y" in workflow
 
   test "documentation output stays beneath build":
     let packageMetadata = readFile(repositoryDir / "terminal_status.nimble")

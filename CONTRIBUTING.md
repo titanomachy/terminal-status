@@ -4,7 +4,7 @@ Contributions are welcome through focused issues and pull requests.
 
 ## Development setup
 
-TerminalStatus requires Nim 2.2.10 or newer, `terminal_style` 0.1.1 or newer,
+TerminalStatus requires Nim 2.0.0 or newer, `terminal_style` 0.1.1 or newer,
 and `terminal_screen` 0.1.1 or newer. Install the dependencies with Nimble, or
 use sibling `terminal-styles` and `terminal-screen` checkouts while developing
 the terminal suite.

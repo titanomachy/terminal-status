@@ -2,6 +2,18 @@
 
 This project follows Semantic Versioning.
 
+## [Unreleased]
+
+### Changed
+
+- Support Nim 2.0.0 and newer, including an explicit disambiguation for the
+  Nim 2.0 standard-library `align` overloads.
+- Test Nim 2.0.0, Nim 2.2.x, and the latest stable compiler on Linux, macOS,
+  and Windows in GitHub Actions under the default memory manager, ARC, and ORC.
+- Restructure and expand the README with platform and dependency requirements,
+  the TerminalDeck context, a contents list, an API overview, an example index,
+  and development, attribution, and license guidance.
+
 ## [0.1.0] - 2026-09-04
 
 ### Added

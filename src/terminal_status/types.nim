@@ -87,13 +87,27 @@ proc isTerminal*(state: StatusState): bool =
   ## Returns whether `state` is succeeded, failed, or cancelled.
   state in {statusSucceeded, statusFailed, statusCancelled}
 
+proc isUnicodeWhitespace(rune: Rune): bool =
+  ## Mirrors the Unicode whitespace set used by `std/unicode`. Nim 2.0.0's
+  ## `unicode.strip` raises a `RangeDefect` for all-whitespace Unicode input,
+  ## so meaningful-text validation must not call it for that case.
+  case int(rune)
+  of 0x0009 .. 0x000D, 0x0020, 0x0085, 0x00A0, 0x1680,
+      0x2000 .. 0x200A, 0x2028, 0x2029, 0x202F, 0x205F, 0x3000:
+    true
+  else:
+    false
+
 proc requireMeaningfulText*(value: string; fieldName = "label") =
   ## Raises `ValueError` unless `value` contains visible text after ANSI
   ## controls and surrounding Unicode whitespace are ignored.
   ##
   ## Validation never rewrites `value`; component models retain the original
   ## text for later renderer normalization.
-  let visibleText = unicode.strip(stripAnsi(value))
+  var visibleText = ""
+  for rune in stripAnsi(value).runes:
+    if not rune.isUnicodeWhitespace:
+      visibleText.add rune.toUTF8
   if visibleText.len == 0 or displayWidth(visibleText) == 0:
     raise newException(ValueError, fieldName & " must contain visible text")
 
@@ -129,7 +143,7 @@ proc validateFrameWidths*(frames: openArray[string]; fieldName = "frames";
   var expectedWidth = -1
   # Indexing produces an owned string value here. Passing the `lent string`
   # yielded directly by an `openArray` into `unicode.runes` is unsafe under
-  # Nim 2.2.10 with ORC.
+  # some Nim 2.x releases with ORC.
   for index in 0 ..< frames.len:
     let frame = frames[index]
     if frame.len == 0:

@@ -355,7 +355,7 @@ proc renderProgress(data: ProgressRenderData; options: RenderOptions;
   proc percentage(): string =
     let value = clamp(int(floor(data.completed.float * 100.0 /
       data.total.get.float)), 0, 100)
-    paint(align($value, 3) & "%", options.theme.metadataStyle, options)
+    paint(strutils.align($value, 3) & "%", options.theme.metadataStyle, options)
 
   proc assemble(labelValue: string): seq[string] =
     result = @[marker, labelValue]
