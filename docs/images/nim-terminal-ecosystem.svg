@@ -1,0 +1,110 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1247 485" role="img" aria-labelledby="title description">
+  <title id="title">Nim Terminal Ecosystem</title>
+  <desc id="description">Five groups of Nim terminal packages for styling, data, layout, status, and interactive UI, with TerminalScreen below the layout group.</desc>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#9cdb98"/>
+    </marker>
+    <style>
+      .background { fill: #303548; }
+      .line { fill: none; stroke: #9cdb98; stroke-width: 2; }
+      .arrow { fill: none; stroke: #9cdb98; stroke-width: 2; marker-end: url(#arrow); }
+      .label {
+        fill: #9cdb98;
+        font-family: "Cascadia Mono", "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+        font-size: 21px;
+      }
+      .center { text-anchor: middle; }
+    </style>
+  </defs>
+
+  <rect class="background" width="1247" height="485"/>
+
+  <rect class="line" x="368" y="24" width="490" height="47"/>
+  <text class="label center" x="613" y="54">Nim Terminal Ecosystem</text>
+
+  <path class="line" d="M613 71 V116 M123 116 H1103"/>
+  <path class="arrow" d="M123 116 V153"/>
+  <path class="arrow" d="M357 116 V153"/>
+  <path class="arrow" d="M613 116 V153"/>
+  <path class="arrow" d="M871 116 V153"/>
+  <path class="arrow" d="M1103 116 V153"/>
+
+  <g>
+    <rect class="line" x="18" y="162" width="211" height="161"/>
+    <path class="line" d="M18 231 H229"/>
+    <text class="label" x="47" y="191">
+      <tspan x="47" dy="0">Styling &amp; Text</tspan>
+      <tspan x="47" dy="23">Formatting</tspan>
+    </text>
+    <text class="label" x="36" y="260">
+      <tspan x="36" dy="0">TerminalStyle</tspan>
+      <tspan x="36" dy="23">(ANSI, Colors,</tspan>
+      <tspan x="36" dy="23"> TrueColor)</tspan>
+    </text>
+  </g>
+
+  <g>
+    <rect class="line" x="251" y="162" width="211" height="161"/>
+    <path class="line" d="M251 231 H462"/>
+    <text class="label" x="269" y="191">
+      <tspan x="269" dy="0">Tabular &amp; Visual</tspan>
+      <tspan x="269" dy="23">Data</tspan>
+    </text>
+    <text class="label" x="269" y="260">
+      <tspan x="269" dy="0">TerminalTable</tspan>
+      <tspan x="269" dy="23">TerminalGraph</tspan>
+      <tspan x="269" dy="23">(Charts, Spark)</tspan>
+    </text>
+  </g>
+
+  <g>
+    <rect class="line" x="508" y="162" width="210" height="161"/>
+    <path class="line" d="M508 231 H718"/>
+    <text class="label" x="526" y="191">
+      <tspan x="526" dy="0">Structural &amp;</tspan>
+      <tspan x="526" dy="23">Layout</tspan>
+    </text>
+    <text class="label" x="526" y="260">
+      <tspan x="526" dy="0">TerminalLayout</tspan>
+      <tspan x="526" dy="23">(Trees, Panels,</tspan>
+      <tspan x="526" dy="23"> Callouts)</tspan>
+    </text>
+  </g>
+
+  <g>
+    <rect class="line" x="765" y="162" width="210" height="161"/>
+    <path class="line" d="M765 231 H975"/>
+    <text class="label" x="783" y="191">
+      <tspan x="783" dy="0">Status &amp;</tspan>
+      <tspan x="783" dy="23">Progress</tspan>
+    </text>
+    <text class="label" x="783" y="260">
+      <tspan x="783" dy="0">TerminalStatus</tspan>
+      <tspan x="783" dy="23">(Spinners,</tspan>
+      <tspan x="783" dy="23"> Progress Bars)</tspan>
+    </text>
+  </g>
+
+  <g>
+    <rect class="line" x="998" y="162" width="210" height="161"/>
+    <path class="line" d="M998 231 H1208"/>
+    <text class="label" x="1016" y="191">
+      <tspan x="1016" dy="0">Interactive UI</tspan>
+      <tspan x="1016" dy="23">Components</tspan>
+    </text>
+    <text class="label" x="1016" y="260">
+      <tspan x="1016" dy="0">TerminalPrompt</tspan>
+      <tspan x="1016" dy="23">TerminalWidgets</tspan>
+      <tspan x="1016" dy="23">(Prompts, Tabs)</tspan>
+    </text>
+  </g>
+
+  <path class="arrow" d="M613 334 V361"/>
+  <rect class="line" x="368" y="369" width="490" height="93"/>
+  <text class="label center" x="613" y="400">
+    <tspan x="613" dy="0">TerminalScreen</tspan>
+    <tspan x="613" dy="23">Alternate Screen · Raw Mode · Cursor</tspan>
+    <tspan x="613" dy="23">Control · Terminal Geometry</tspan>
+  </text>
+</svg>

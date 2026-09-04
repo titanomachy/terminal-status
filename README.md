@@ -43,7 +43,9 @@ TerminalDeck
     └── TerminalWidgets
 ```
 
-This diagram describes the suite, not the dependency graph. TerminalStatus
+![Nim terminal ecosystem package map](docs/images/nim-terminal-ecosystem.svg)
+
+These diagrams describe the suite, not the dependency graph. TerminalStatus
 depends only on TerminalStyle and TerminalScreen; the other packages can
 consume its rendered strings without adapters or reverse dependencies.
 
