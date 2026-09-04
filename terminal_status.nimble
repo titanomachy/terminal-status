@@ -86,7 +86,7 @@ task artifactPolicy, "Verify generated products remain beneath build":
   exec "nim c -r -d:terminalStatusTest tests/test_build_policy.nim"
 
 task releaseCheck, "Run all standalone release-readiness checks":
-  exec "nimble check"
+  exec "nimble check -y"
   exec "nimble compilePackage"
   exec "nimble test"
   exec "nimble testArc"

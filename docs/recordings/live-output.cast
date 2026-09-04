@@ -1,0 +1,6 @@
+{"version":3,"term":{"cols":28,"rows":3},"timestamp":1788532570,"command":"./build/live_output --ansi --hide-cursor --demo","title":"TerminalStatus live output strategies","env":{"TERM":"xterm-256color"}}
+[0.002, "o", "\u001b[?25lPreparing release\r\r\n0/2 tasks complete"]
+[0.400, "o", "\r\u001b[1A\u001b[2K\u001b[1B\r\u001b[2K\u001b[1A\rBuilding documentation\r\r\n1/2 tasks complete"]
+[0.400, "o", "\r\u001b[1A\u001b[2K\u001b[1B\r\u001b[2K\u001b[1A\rRelease ready\r\r\n2/2 tasks complete"]
+[0.200, "o", "\r\r\n\u001b[?25h"]
+[0.001, "x", "0"]

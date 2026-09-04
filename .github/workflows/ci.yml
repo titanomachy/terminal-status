@@ -25,8 +25,10 @@ jobs:
         with:
           nim-version: ${{ matrix.nim }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install package dependencies
+        run: nimble install --depsOnly -y
       - name: Check package metadata
-        run: nimble check
+        run: nimble check -y
       - name: Compile public facade
         run: nimble compilePackage -y
       - name: Run tests with the default memory manager

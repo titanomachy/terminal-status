@@ -1,9 +1,10 @@
 ## Shared states, identifiers, snapshots, and timing contracts.
 ##
 ## The shared types are plain in-memory values. This example uses explicit
-## monotonic timestamps, so it is finite and deterministic without sleeping.
+## monotonic timestamps, so its default mode is finite and deterministic
+## without sleeping. `--demo` only paces the displayed output.
 
-import std/[monotimes, options, tables, times]
+import std/[monotimes, options, os, tables, times]
 
 import terminal_status/types
 
@@ -45,10 +46,11 @@ doAssert finishedAt == some(completedAt)
 doAssert elapsedDuration(started, finishedAt,
   completedAt + initDuration(seconds = 2)).inMilliseconds == 250
 
+var rejectedTransition = ""
 try:
   transitionToTerminal(state, finishedAt, statusFailed, completedAt)
 except StatusStateError as error:
-  echo "rejected transition: ", error.msg
+  rejectedTransition = "rejected transition: " & error.msg
 
 let step = StepSnapshot(
   label: "Verify archive",
@@ -58,8 +60,16 @@ let step = StepSnapshot(
   finishedAt: some(completedAt)
 )
 
-echo "task ", progress.id, ": ", progress.completed, "/", progress.total.get,
-  " ", progress.unit
-echo step.label, ": ", step.state
-echo "elapsed: ", elapsedDuration(started, finishedAt, completedAt).inMilliseconds,
-  " ms"
+let output = [
+  rejectedTransition,
+  "task " & $progress.id & ": " & $progress.completed & "/" &
+    $progress.total.get & " " & progress.unit,
+  step.label & ": " & $step.state,
+  "elapsed: " & $elapsedDuration(started, finishedAt,
+    completedAt).inMilliseconds & " ms"
+]
+
+for index, line in output:
+  echo line
+  if "--demo" in commandLineParams() and index < output.high:
+    sleep(300)

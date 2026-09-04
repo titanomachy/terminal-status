@@ -1,0 +1,8 @@
+{"version":3,"term":{"cols":40,"rows":5},"timestamp":1788532567,"command":"./build/step_tracker --demo","title":"TerminalStatus steps","env":{"TERM":"xterm-256color"}}
+[0.002, "o", "\u001b[?25l"]
+[0.000, "o", "Release\r\r\n\u001b[36m·\u001b[0m Build package — \u001b[2;90mrelease mode\u001b[0m\r\r\n\u001b[2;90m○\u001b[0m Run tests\r\r\n\u001b[2;90m○\u001b[0m Publish archive"]
+[0.351, "o", "\r\u001b[3A\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[3A\rRelease\r\r\n\u001b[32m✓\u001b[0m Build package — \u001b[2;90mrelease mode\u001b[0m\r\r\n\u001b[36m·\u001b[0m Run tests\r\r\n\u001b[2;90m○\u001b[0m Publish archive"]
+[0.350, "o", "\r\u001b[3A\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[3A\rRelease\r\r\n\u001b[32m✓\u001b[0m Build package — \u001b[2;90mrelease mode\u001b[0m\r\r\n\u001b[32m✓\u001b[0m Run tests\r\r\n\u001b[36m·\u001b[0m Publish archive — \u001b[2;90mregistry upload\u001b[0m"]
+[0.350, "o", "\r\u001b[3A\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[1B\r\u001b[2K\u001b[3A\rRelease\r\r\n\u001b[32m✓\u001b[0m Build package — \u001b[2;90mrelease mode\u001b[0m\r\r\n\u001b[32m✓\u001b[0m Run tests\r\r\n\u001b[32m✓\u001b[0m Publish archive — \u001b[2;90mregistry upload\u001b[0m"]
+[0.201, "o", "\r\r\n\u001b[?25h"]
+[0.000, "x", "0"]

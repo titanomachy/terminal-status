@@ -1,0 +1,7 @@
+{"version":3,"term":{"cols":78,"rows":5},"timestamp":1788532569,"command":"zsh -f -c 'printf \"\\\\033[?25l\"; ./build/shared_types --demo; sleep 0.2'","title":"TerminalStatus shared contracts","env":{"TERM":"xterm-256color"}}
+[0.003, "o", "\u001b[?25l"]
+[0.001, "o", "rejected transition: cannot transition from statusSucceeded to statusFailed\r\n"]
+[0.300, "o", "task 42: 3/10 packages\r\n"]
+[0.300, "o", "Verify archive: statusSucceeded\r\n"]
+[0.300, "o", "elapsed: 250 ms\r\n"]
+[0.202, "x", "0"]

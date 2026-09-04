@@ -66,6 +66,8 @@ suite "repository build policy":
         check operatingSystem in workflow
       for compiler in ["2.0.0", "2.2.x", "stable"]:
         check compiler in workflow
+      check "nimble install --depsOnly -y" in workflow
+      check "nimble check -y" in workflow
       check "nimble test -y" in workflow
       check "nimble testArc -y" in workflow
       check "nimble testOrc -y" in workflow
@@ -130,7 +132,7 @@ suite "repository build policy":
       check ("task " & taskName & ",") in packageMetadata
 
     for releaseStep in [
-      "nimble check", "nimble compilePackage", "nimble test",
+      "nimble check -y", "nimble compilePackage", "nimble test",
       "nimble testArc", "nimble testOrc", "nimble examples", "nimble docs",
       "nimble artifactPolicy"
     ]:

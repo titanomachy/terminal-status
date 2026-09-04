@@ -1,0 +1,9 @@
+{"version":3,"term":{"cols":66,"rows":3},"timestamp":1788532566,"command":"./build/multi_progress --demo","title":"TerminalStatus multi-progress","env":{"TERM":"xterm-256color"}}
+[0.002, "o", "\u001b[?25l"]
+[0.001, "o", "\u001b[36m●\u001b[0m Download [\u001b[2;90m░░░░░░░░\u001b[0m] \u001b[2;90m  0%\u001b[0m \u001b[2;90m0/4 files\u001b[0m\r\r\n\u001b[36m●\u001b[0m Verify [\u001b[32m███\u001b[0m\u001b[2;90m░░░░░\u001b[0m]"]
+[0.183, "o", "\r\u001b[1A\u001b[2K\u001b[1B\r\u001b[2K\u001b[1A\r\u001b[36m●\u001b[0m Download [\u001b[32m██\u001b[0m\u001b[2;90m░░░░░░\u001b[0m] \u001b[2;90m 25%\u001b[0m \u001b[2;90m1/4 files\u001b[0m \u001b[2;90m5.0 files/s\u001b[0m \u001b[2;90mETA 1s\u001b[0m\r\r\n\u001b[36m●\u001b[0m Verify [\u001b[2;90m░░\u001b[0m\u001b[32m███\u001b[0m\u001b[2;90m░░░\u001b[0m]"]
+[0.182, "o", "\r\u001b[1A\u001b[2K\u001b[1B\r\u001b[2K\u001b[1A\r\u001b[36m●\u001b[0m Download [\u001b[32m████\u001b[0m\u001b[2;90m░░░░\u001b[0m] \u001b[2;90m 50%\u001b[0m \u001b[2;90m2/4 files\u001b[0m \u001b[2;90m5.0 files/s\u001b[0m \u001b[2;90mETA 1s\u001b[0m\r\r\n\u001b[32m✓\u001b[0m Verify [\u001b[32m████████\u001b[0m]"]
+[0.182, "o", "\r\u001b[1A\u001b[2K\u001b[1B\r\u001b[2K\u001b[1A\r\u001b[36m●\u001b[0m Download [\u001b[32m██████\u001b[0m\u001b[2;90m░░\u001b[0m] \u001b[2;90m 75%\u001b[0m \u001b[2;90m3/4 files\u001b[0m \u001b[2;90m5.0 files/s\u001b[0m \u001b[2;90mETA 1s\u001b[0m\r\r\n\u001b[32m✓\u001b[0m Verify [\u001b[32m████████\u001b[0m]"]
+[0.181, "o", "\r\u001b[1A\u001b[2K\u001b[1B\r\u001b[2K\u001b[1A\r\u001b[32m✓\u001b[0m Download [\u001b[32m████████\u001b[0m] \u001b[2;90m100%\u001b[0m \u001b[2;90m4/4 files\u001b[0m \u001b[2;90m5.0 files/s\u001b[0m\r\r\n\u001b[32m✓\u001b[0m Verify [\u001b[32m████████\u001b[0m]"]
+[0.200, "o", "\r\r\n\u001b[?25h"]
+[0.000, "x", "0"]

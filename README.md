@@ -203,6 +203,11 @@ table, a custom theme and spinner preset, and `--ascii`/`--no-color` previews.
 
 ## Spinner
 
+![TerminalStatus spinner example](docs/images/spinner.gif)
+
+[Download the source asciicast](docs/recordings/spinner.cast) or run the finite
+[`spinner.nim`](examples/spinner.nim) animation locally.
+
 Import the façade, choose a built-in preset, and sample frames whenever your
 application refreshes its display:
 
@@ -234,10 +239,15 @@ and refresh it. Terminal transitions freeze elapsed time and frame selection.
 Repeating the same success, failure, or cancellation is harmless, while
 switching terminal outcomes raises `StatusStateError`. See the
 [Spinner model guide](docs/spinners.md) for presets, customization, ownership,
-and transition behavior, and run the finite
-[`spinner.nim`](examples/spinner.nim) example for a caller-driven animation.
+and transition behavior.
 
 ## Progress
+
+![TerminalStatus determinate progress example](docs/images/progress.gif)
+
+[Download the source asciicast](docs/recordings/progress.cast) or run the
+animated [`progress_bar.nim`](examples/progress_bar.nim) example locally with
+`nim r --path:src examples/progress_bar.nim --demo`.
 
 Determinate progress checks every numeric update before mutation and
 automatically succeeds when it reaches the exact total:
@@ -273,6 +283,12 @@ the finite [`progress_bar.nim`](examples/progress_bar.nim) and
 
 ## Multi-progress
 
+![TerminalStatus multi-progress example](docs/images/multi-progress.gif)
+
+[Download the source asciicast](docs/recordings/multi-progress.cast) or run the
+animated [`multi_progress.nim`](examples/multi_progress.nim) example locally
+with `nim r --path:src examples/multi_progress.nim --demo`.
+
 `MultiProgress` keeps insertion order and assigns IDs that are never reused:
 
 ```nim
@@ -294,6 +310,12 @@ mutation, removal, and non-reused IDs.
 
 ## Steps
 
+![TerminalStatus step tracker example](docs/images/steps.gif)
+
+[Download the source asciicast](docs/recordings/steps.cast) or run the animated
+[`step_tracker.nim`](examples/step_tracker.nim) example locally with
+`nim r --path:src examples/step_tracker.nim --demo`.
+
 ```nim
 var release = initStepTracker(["Build", "Test", "Publish"], "Release")
 release.start()
@@ -309,6 +331,12 @@ steps pending. Cancellation preserves earlier successful steps. See the
 [`step_tracker.nim`](examples/step_tracker.nim) example.
 
 ## Shared contracts
+
+![TerminalStatus shared contracts example](docs/images/shared-contracts.gif)
+
+[Download the source asciicast](docs/recordings/shared-contracts.cast) or run
+the paced [`shared_types.nim`](examples/shared_types.nim) example locally with
+`nim r --path:src examples/shared_types.nim --demo`.
 
 Import `terminal_status/types` directly or use the `terminal_status` façade for
 the shared API:
@@ -330,6 +358,12 @@ and [`validation.nim`](examples/validation.nim) examples show those contracts
 and their failure handling as runnable programs.
 
 ## Live output strategies
+
+![TerminalStatus live output strategies example](docs/images/live-output.gif)
+
+[Download the source asciicast](docs/recordings/live-output.cast) or run the
+animated [`live_output.nim`](examples/live_output.nim) example locally with
+`nim r --path:src examples/live_output.nim --ansi --hide-cursor --demo`.
 
 `LiveDisplay` borrows `stderr` by default. Auto mode performs one TerminalScreen
 capability check when the display opens: ANSI-capable output uses redraws, while
