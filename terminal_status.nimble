@@ -17,6 +17,9 @@ requires "terminal_style >= 0.1.1"
 
 # Tasks
 
+task suiteIntegration, "Run sibling-source and suite composition checks":
+  exec "nim c -r tests/test_suite_integration.nim"
+
 task docs, "Generate public API and focused module documentation":
   exec "nim doc --skipParentCfg:on --project --index:on --outdir:build/docs --path:src src/terminal_status.nim"
   exec "nim doc --skipParentCfg:on --index:on --outdir:build/docs --path:src src/terminal_status/types.nim"

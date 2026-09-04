@@ -3,6 +3,9 @@
 ## Rendering performs no terminal queries or I/O and never mutates a model.
 ## Callers choose color, character repertoire, width, metadata, and the one
 ## monotonic timestamp used by an entire frame through `RenderOptions`.
+## Returned frames are ordinary strings and require no adapter when embedded
+## in TerminalLayout or TerminalTable. This module does not import live output
+## or TerminalScreen and performs no terminal capability detection.
 
 import std/[math, monotimes, options, strutils, times, unicode]
 

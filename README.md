@@ -327,6 +327,51 @@ open the live layer. The finite [`api_facade.nim`](examples/api_facade.nim)
 example compiles in façade mode by default and in focused-import mode with
 `-d:focusedImports`.
 
+## Suite interoperability
+
+Every pure renderer returns an ordinary string. Pass that string directly to
+a TerminalLayout panel or TerminalTable cell—there is no TerminalStatus
+adapter, shared mutable state, or reverse dependency:
+
+```nim
+import terminal_layout
+import terminal_table
+import terminal_status/[progress, rendering]
+
+var bar = initProgressBar("Compile suite", 4)
+bar.advance(3)
+
+var options = defaultRenderOptions()
+options.width = 32
+options.barWidth = 8
+options.useColor = false
+options.showCount = false
+options.showRate = false
+options.showEta = false
+let status = bar.render(options)
+
+let panel = initPanel(status, width = 36, useColor = false)
+var table = initTable(["Current status"])
+table.addRow(status)
+```
+
+Focused `progress` and `rendering` imports are sufficient for string rendering
+and do not import or open `terminal_status/live`. TerminalLayout and
+TerminalTable are optional consumers, not package dependencies. The finite
+[`interoperability.nim`](examples/interoperability.nim) example renders both
+forms. In a sibling suite checkout, run it with:
+
+```sh
+nim c -r --path:src --path:../terminal-styles/src \
+  --path:../terminal-layout/src --path:../terminal-tables/src \
+  examples/interoperability.nim
+```
+
+`nimble suiteIntegration` compiles isolated probes against the sibling
+TerminalStyle and TerminalScreen source trees, then verifies TerminalLayout
+and TerminalTable composition when those development-only siblings are
+available.
+
 ## Development
 
 Compiler products, caches, test executables, and generated documentation must
@@ -350,6 +395,7 @@ nimble c -r examples/live_output.nim
 nimble c -r examples/screen_composition.nim
 nimble c -r examples/api_facade.nim
 nimble c -r -d:focusedImports examples/api_facade.nim
+nimble suiteIntegration
 nimble docs
 ```
 

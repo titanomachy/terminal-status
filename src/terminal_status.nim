@@ -5,6 +5,13 @@
 ## Importing it performs no output, terminal detection, or background work;
 ## live capability detection is deferred until a display is opened.
 ##
+## Rendered values cross the suite boundary as ordinary strings. They can be
+## passed directly to TerminalLayout panels or TerminalTable cells without an
+## adapter. Consumers that only build such strings can import `progress`,
+## `rendering`, and optionally `themes`; those modules neither import nor open
+## the `live` layer. TerminalLayout and TerminalTable remain consumer-side,
+## development-only integrations rather than dependencies of this package.
+##
 ## Import this module for the complete public API:
 ##
 ## .. code-block:: nim

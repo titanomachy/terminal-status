@@ -6,6 +6,12 @@ This project follows Semantic Versioning.
 
 ### Added
 
+- Complete Phase 4 interoperability with isolated sibling-source probes for
+  TerminalStyle and TerminalScreen, development-only TerminalLayout panel and
+  TerminalTable cell composition checks, and a focused pure-rendering probe
+  that does not import or open live output.
+- Add a finite suite-interoperability example and document the adapter-free
+  string boundary, source-path test command, and focused import contract.
 - Complete the Phase 4 public façade with all component, rendering, theme, and
   live exports; add process-isolated, empty-output import probes for the façade
   and every public submodule, plus façade/focused-import documentation and a
