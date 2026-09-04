@@ -59,3 +59,34 @@ suite "repository build policy":
     let packageMetadata = readFile(repositoryDir / "terminal_status.nimble")
     check "--outdir:build/docs" in packageMetadata
     check not dirExists(repositoryDir / "htmldocs")
+
+  test "the required focused test layout and memory-manager tasks remain present":
+    for relativePath in [
+      "tests/fixtures.nim",
+      "tests/test_types.nim",
+      "tests/test_spinners.nim",
+      "tests/test_progress.nim",
+      "tests/test_multi_progress.nim",
+      "tests/test_steps.nim",
+      "tests/test_rendering.nim",
+      "tests/test_live_output.nim",
+      "tests/test_imports.nim",
+      "tests/test_suite_integration.nim",
+      "tests/test_build_policy.nim"
+    ]:
+      check fileExists(repositoryDir / relativePath)
+
+    let packageMetadata = readFile(repositoryDir / "terminal_status.nimble")
+    check "-d:terminalStatusTest" in packageMetadata
+    check "task test," in packageMetadata
+    check "task testArc," in packageMetadata
+    check "runTests(\"arc\")" in packageMetadata
+    check "task testOrc," in packageMetadata
+    check "runTests(\"orc\")" in packageMetadata
+
+  test "correctness tests contain no timing sleeps":
+    let sleepCall = "sl" & "eep"
+    for testFile in walkFiles(repositoryDir / "tests" / "test_*.nim"):
+      let source = readFile(testFile).toLowerAscii
+      check sleepCall & "(" notin source
+      check sleepCall & " (" notin source

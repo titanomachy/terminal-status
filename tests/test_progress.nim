@@ -3,10 +3,7 @@ import std/[monotimes, options, times, unittest]
 import terminal_status/progress
 import terminal_status/types
 
-let baseTime = getMonoTime()
-
-proc at(milliseconds: int64): MonoTime =
-  baseTime + initDuration(milliseconds = milliseconds)
+import ./fixtures
 
 suite "determinate progress":
   test "construction validates and exposes the initial model":
@@ -73,6 +70,16 @@ suite "determinate progress":
     expect ValueError:
       bar.setCompleted(int64.high - 2, at(200))
     check (bar.completed, bar.state, bar.finishedAt) == before
+
+    var bounded = initProgressBar("Bounded", 10, now = at(0))
+    bounded.setCompleted(8, at(100))
+    let boundedBefore = (bounded.completed, bounded.state, bounded.finishedAt)
+    expect ValueError:
+      bounded.advance(3, at(200))
+    check (bounded.completed, bounded.state, bounded.finishedAt) == boundedBefore
+    expect ValueError:
+      bounded.setCompleted(11, at(200))
+    check (bounded.completed, bounded.state, bounded.finishedAt) == boundedBefore
 
   test "explicit terminal operations obey transition rules":
     block:
@@ -151,13 +158,23 @@ suite "determinate progress":
 suite "indeterminate progress":
   test "construction has no numeric metrics":
     let bar = initIndeterminateProgressBar("Waiting", now = at(0))
+    check bar.label == "Waiting"
+    check bar.unit == ""
     check bar.mode == progressIndeterminate
     check bar.state == statusRunning
     check bar.completed == 0
     check bar.total == none(int64)
+    check bar.startedAt == at(0)
+    check bar.finishedAt == none(MonoTime)
+    check bar.elapsed(at(250)).inMilliseconds == 250
     check bar.fraction == none(float)
     check bar.ratePerSecond(at(1000)) == none(float)
     check bar.eta(at(1000)) == none(Duration)
+
+    expect ValueError:
+      discard initIndeterminateProgressBar("  ", now = at(0))
+    expect ValueError:
+      discard initIndeterminateProgressBar("Waiting", "\e[31m\e[0m", at(0))
 
   test "numeric mutation is rejected and lifecycle operations remain valid":
     var bar = initIndeterminateProgressBar("Waiting", "requests", at(0))
@@ -178,12 +195,21 @@ suite "indeterminate progress":
     block:
       var bar = initIndeterminateProgressBar("Wait", now = at(0))
       bar.fail(at(100))
+      bar.fail(at(900))
       check bar.state == statusFailed
+      check bar.finishedAt == some(at(100))
+      check bar.elapsed(at(2_000)).inMilliseconds == 100
+      expect StatusStateError:
+        bar.cancel(at(1_000))
     block:
       var bar = initIndeterminateProgressBar("Wait", now = at(0))
       bar.cancel(at(100))
+      bar.cancel(at(900))
       bar.setLabel("Stopped")
       bar.setUnit("operations")
       check bar.state == statusCancelled
+      check bar.finishedAt == some(at(100))
       check bar.label == "Stopped"
       check bar.unit == "operations"
+      expect StatusStateError:
+        bar.complete(at(1_000))

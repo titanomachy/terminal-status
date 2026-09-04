@@ -1,3 +1,5 @@
+import std/[algorithm, os, strutils]
+
 # Package
 
 version       = "0.1.0"
@@ -16,6 +18,30 @@ requires "terminal_style >= 0.1.1"
 
 
 # Tasks
+
+proc runTests(memoryManager = "") =
+  var testFiles: seq[string]
+  for testFile in listFiles("tests"):
+    let name = testFile.extractFilename
+    if name.startsWith("test_") and name.endsWith(".nim"):
+      testFiles.add testFile
+  testFiles.sort()
+
+  let memoryManagerFlag =
+    if memoryManager.len == 0: ""
+    else: " --mm:" & memoryManager
+  for testFile in testFiles:
+    exec "nim c -r -d:terminalStatusTest" & memoryManagerFlag & " " &
+      quoteShell(testFile)
+
+task test, "Run the complete terminal_status test suite":
+  runTests()
+
+task testArc, "Run the complete test suite with ARC":
+  runTests("arc")
+
+task testOrc, "Run the complete test suite with ORC":
+  runTests("orc")
 
 task suiteIntegration, "Run sibling-source and suite composition checks":
   exec "nim c -r tests/test_suite_integration.nim"

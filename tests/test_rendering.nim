@@ -1,12 +1,9 @@
-import std/[monotimes, options, strutils, times, unittest]
+import std/[options, strutils, unittest]
 
 import terminal_style
 import terminal_status
 
-let baseTime = getMonoTime()
-
-proc at(milliseconds: int64): MonoTime =
-  baseTime + initDuration(milliseconds = milliseconds)
+import ./fixtures
 
 proc plainOptions(barWidth = 10): RenderOptions =
   result = defaultRenderOptions()
@@ -61,6 +58,36 @@ suite "pure component renderers":
     check failed.render(options, at(900)) == "x Fetching packages"
     check '\n' notin failed.render(options, at(900))
     check '\r' notin failed.render(options, at(900))
+
+  test "every built-in spinner and terminal marker has an exact form":
+    var options = plainOptions()
+    for sample in [
+      (dotsSpinner(), 80'i64, "⠙", "o"),
+      (lineSpinner(), 100'i64, "\\", "\\"),
+      (arcSpinner(), 100'i64, "◠", "\\"),
+      (pulseSpinner(), 120'i64, "•", "o")
+    ]:
+      let spinner = initSpinner("Work", sample[0], at(0))
+      options.characters = statusUnicode
+      check spinner.render(options, at(sample[1])) == sample[2] & " Work"
+      options.characters = statusAscii
+      check spinner.render(options, at(sample[1])) == sample[3] & " Work"
+
+    for terminal in [
+      (statusSucceeded, "✓", "+"),
+      (statusFailed, "✗", "x"),
+      (statusCancelled, "–", "-")
+    ]:
+      var spinner = initSpinner("Work", now = at(0))
+      case terminal[0]
+      of statusSucceeded: spinner.succeed(at(100))
+      of statusFailed: spinner.fail(at(100))
+      of statusCancelled: spinner.cancel(at(100))
+      else: discard
+      options.characters = statusUnicode
+      check spinner.render(options, at(900)) == terminal[1] & " Work"
+      options.characters = statusAscii
+      check spinner.render(options, at(900)) == terminal[2] & " Work"
 
   test "determinate progress formats percentage count rate ETA and elapsed":
     var bar = initProgressBar("Downloading", 100, "MB", at(0))
@@ -134,6 +161,11 @@ suite "pure component renderers":
     options.barWidth = 1
     check oneCell.render(options, at(9_000)) == "> One [#]"
 
+    var cancelled = initIndeterminateProgressBar("Waiting", now = at(0))
+    cancelled.cancel(at(200))
+    options.barWidth = 5
+    check cancelled.render(options, at(9_000)) == "- Waiting [--###]"
+
   test "multi-progress preserves insertion order and has no final newline":
     var multi = initMultiProgress()
     let
@@ -171,6 +203,17 @@ suite "pure component renderers":
     check cancelled.render(options, at(0)) == "- One\n- Two"
 
 suite "responsive cell widths":
+  test "zero width is unbounded and positive widths never pad":
+    let spinner = initSpinner("abcdef", initSpinnerStyle(["*"], 100), at(0))
+    var options = plainOptions()
+    options.width = 0
+    check spinner.render(options, at(0)) == "* abcdef"
+
+    options.width = 40
+    let bounded = spinner.render(options, at(0))
+    check bounded == "* abcdef"
+    check displayWidth(bounded) < options.width
+
   test "every positive width bounds all component rows":
     var
       spinner = initSpinner("編譯 e\u0301moji 👩‍💻 and flag 🇳🇱", now = at(0))
@@ -204,8 +247,17 @@ suite "responsive cell widths":
 
     options.characters = statusAscii
     options.width = 7
-    let asciiSpinner = initSpinner("abcdef", initSpinnerStyle(["*"] , 100), at(0))
+    let asciiSpinner = initSpinner("abcdef", initSpinnerStyle(["*"], 100), at(0))
     check asciiSpinner.render(options, at(0)) == "* ab..."
+
+    options.width = 3
+    check asciiSpinner.render(options, at(0)) == "* ."
+    options.width = 1
+    check asciiSpinner.render(options, at(0)) == "."
+
+    options.characters = statusUnicode
+    options.width = 1
+    check spinner.render(options, at(0)) == "…"
 
   test "progress reduction removes metadata then bar structure deterministically":
     var bar = initProgressBar("Download", 100, "MB", at(0))
@@ -252,23 +304,63 @@ suite "safe user text and color control":
     let malformed = initSpinner("bad\xfftext", initSpinnerStyle(["*"], 100), at(0))
     check malformed.render(plainOptions(), at(0)).startsWith("* bad")
 
+  test "every hostile control class is inert in rendered model text":
+    let unsafeParts = [
+      "\e[2A",                    # cursor movement
+      "\e[2K",                    # erase
+      "\e]0;owned\a",             # terminal title
+      "\e]52;c;c2VjcmV0\a",       # clipboard
+      "\e7",                       # two-byte escape
+      "\e[31",                     # incomplete CSI
+      "\e]8;;https://example.com", # incomplete OSC
+      "\x00\x7f",                  # C0 and DEL
+      "\xC2\x9B"                   # encoded C1 CSI
+    ]
+    for unsafe in unsafeParts:
+      let spinner = initSpinner(
+        "safe" & unsafe & "text", initSpinnerStyle(["*"], 100), at(0))
+      let rendered = spinner.render(plainOptions(), at(0))
+      check rendered.startsWith("* safe")
+      check '\e' notin rendered
+      check '\r' notin rendered
+      check '\n' notin rendered
+      check '\t' notin rendered
+
   test "safe SGR and OSC-8 survive enabled rendering and close locally":
     let
       hyperlink = "\e]8;;https://example.com\aLink"
       styled = "\e[31mred"
+      nested = "\e]8;;https://example.com\a\e[1mDocs \e[34mlink"
       style = initSpinnerStyle(["*"], 100)
       hyperlinkSpinner = initSpinner(hyperlink, style, at(0))
       styledSpinner = initSpinner(styled, style, at(0))
+      nestedSpinner = initSpinner(nested, style, at(0))
       options = unstyledOptions()
 
     check hyperlinkSpinner.render(options, at(0)) ==
       "* \e]8;;https://example.com\aLink\e]8;;\e\\"
     check styledSpinner.render(options, at(0)) == "* \e[31mred\e[0m"
+    check nestedSpinner.render(options, at(0)) ==
+      "* \e]8;;https://example.com\a\e[1mDocs \e[34mlink" &
+      "\e]8;;\e\\\e[0m"
 
     var plain = options
     plain.useColor = false
     check hyperlinkSpinner.render(plain, at(0)) == "* Link"
     check styledSpinner.render(plain, at(0)) == "* red"
+
+  test "styling changes bytes but never visible display width":
+    let spinner = initSpinner("Visible width", now = at(0))
+    var colored = defaultRenderOptions()
+    colored.useColor = true
+    var plain = colored
+    plain.useColor = false
+    let
+      coloredFrame = spinner.render(colored, at(0))
+      plainFrame = spinner.render(plain, at(0))
+    check coloredFrame != plainFrame
+    check displayWidth(coloredFrame) == displayWidth(plainFrame)
+    check stripAnsi(coloredFrame) == plainFrame
 
   test "color disabled strips both caller and theme ANSI from every renderer":
     var
@@ -295,9 +387,33 @@ suite "safe user text and color control":
       rendered.endsWith("\e[0m\e]8;;\e\\…")
 
   test "rendering is deterministic and does not mutate models":
-    var bar = initProgressBar("Work", 10, now = at(0))
+    var
+      spinner = initSpinner("Spin", now = at(0))
+      bar = initProgressBar("Work", 10, now = at(0))
+      multi = initMultiProgress()
+      tracker = initStepTracker(["Fetch", "Build"], "Release")
     bar.advance(4, at(1_000))
-    let before = (bar.label, bar.state, bar.completed, bar.finishedAt)
-    let first = bar.render(plainOptions(), at(2_000))
-    check bar.render(plainOptions(), at(2_000)) == first
-    check (bar.label, bar.state, bar.completed, bar.finishedAt) == before
+    let taskId = multi.addTask("Compile", 10, now = at(0))
+    multi.advance(taskId, 4, at(1_000))
+    tracker.start(at(0))
+    let
+      spinnerBefore = (spinner.label, spinner.state, spinner.startedAt,
+        spinner.finishedAt, spinner.frameIndex(at(2_000)))
+      barBefore = (bar.label, bar.state, bar.completed, bar.finishedAt)
+      multiBefore = (multi.taskIds, multi.tasks)
+      trackerBefore = (tracker.title, tracker.state, tracker.currentIndex,
+        tracker.steps)
+      spinnerFrame = spinner.render(plainOptions(), at(2_000))
+      barFrame = bar.render(plainOptions(), at(2_000))
+      multiFrame = multi.render(plainOptions(), at(2_000))
+      trackerFrame = tracker.render(plainOptions(), at(2_000))
+    check spinner.render(plainOptions(), at(2_000)) == spinnerFrame
+    check bar.render(plainOptions(), at(2_000)) == barFrame
+    check multi.render(plainOptions(), at(2_000)) == multiFrame
+    check tracker.render(plainOptions(), at(2_000)) == trackerFrame
+    check (spinner.label, spinner.state, spinner.startedAt,
+      spinner.finishedAt, spinner.frameIndex(at(2_000))) == spinnerBefore
+    check (bar.label, bar.state, bar.completed, bar.finishedAt) == barBefore
+    check (multi.taskIds, multi.tasks) == multiBefore
+    check (tracker.title, tracker.state, tracker.currentIndex,
+      tracker.steps) == trackerBefore

@@ -61,6 +61,40 @@ suite "live output strategies":
     check display.state == displayClosed
     check display.effectiveMode == none(LiveMode)
 
+  test "single-use lifecycle rejects updates and reopening at exact boundaries":
+    var capture = openCapture("lifecycle")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = livePlain
+    var display = initLiveDisplay(options)
+
+    expect LiveDisplayError:
+      display.update("too early")
+    display.open()
+    display.open() # Repeated open while open is the documented no-op.
+    check display.state == displayOpen
+    check display.effectiveMode == some(livePlain)
+    display.close()
+    expect LiveDisplayError:
+      display.update("too late")
+    expect LiveDisplayError:
+      display.open()
+    display.close()
+
+    check capture.finishCapture() == ""
+
+  test "a nil borrowed stream fails open without changing lifecycle state":
+    var options = defaultLiveDisplayOptions()
+    options.output = nil
+    options.mode = livePlain
+    var display = initLiveDisplay(options)
+
+    expect ValueError:
+      display.open()
+    check display.state == displayNew
+    check display.effectiveMode == none(LiveMode)
+    display.close()
+    check display.state == displayClosed
+
   test "forced plain caches only the latest visible frame by default":
     var capture = openCapture("plain-final")
     var options = defaultLiveDisplayOptions(capture.output)
@@ -93,6 +127,20 @@ suite "live output strategies":
     display.close()
 
     check capture.finishCapture() == "one\ntwo\nrows\n"
+
+  test "plain final-only suppresses duplicate and empty final frames":
+    var capture = openCapture("plain-empty-final")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = livePlain
+    var display = initLiveDisplay(options)
+
+    display.open()
+    display.update("one")
+    display.update("one")
+    display.update("")
+    display.close()
+
+    check capture.finishCapture() == ""
 
   test "auto mode uses plain output for a redirected file":
     var capture = openCapture("auto")
@@ -206,6 +254,19 @@ suite "live output strategies":
     check capture.finishCapture() == "last valid frame\n"
 
 suite "ANSI redraw and cleanup":
+  test "a first multi-row frame uses only terminal row separators":
+    var capture = openCapture("ansi-first-multi")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = liveAnsi
+    options.flushWrites = false
+    var display = initLiveDisplay(options)
+
+    display.open()
+    display.update("first\nsecond\nthird")
+    display.close()
+
+    check capture.finishCapture() == "first\r\nsecond\r\nthird\r\n"
+
   test "first draw is direct and duplicate updates write nothing":
     var capture = openCapture("ansi-duplicate")
     var options = defaultLiveDisplayOptions(capture.output)
@@ -318,6 +379,25 @@ suite "ANSI redraw and cleanup":
     display.close()
 
     check capture.finishCapture() == ""
+
+  test "a final write failure still closes the display":
+    let path = capturePath("read-only-stream")
+    writeFile(path, "")
+    var readOnlyOutput: File
+    check open(readOnlyOutput, path, fmRead)
+    var options = defaultLiveDisplayOptions(readOnlyOutput)
+    options.mode = livePlain
+    var display = initLiveDisplay(options)
+
+    display.open()
+    display.update("cannot be written")
+    expect IOError:
+      display.close()
+    check display.state == displayClosed
+    display.close()
+    readOnlyOutput.close()
+    check readFile(path) == ""
+    removeFile(path)
 
   test "scoped ANSI cleanup clears rows and restores its cursor on exceptions":
     var capture = openCapture("ansi-scoped")

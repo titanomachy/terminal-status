@@ -6,6 +6,12 @@ This project follows Semantic Versioning.
 
 ### Added
 
+- Complete the Phase 5 quality matrix with shared injected-time fixtures,
+  additional model/render/live lifecycle and hostile-input cases, deterministic
+  TaskId exhaustion coverage, and build-policy guards against correctness
+  sleeps or missing focused modules.
+- Add complete default, ARC, and ORC test tasks over the same sorted suite,
+  plus a deterministic testing guide and finite injected-time example.
 - Complete Phase 4 interoperability with isolated sibling-source probes for
   TerminalStyle and TerminalScreen, development-only TerminalLayout panel and
   TerminalTable cell composition checks, and a focused pure-rendering probe

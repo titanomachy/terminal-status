@@ -2,14 +2,11 @@ import std/[hashes, monotimes, options, sets, times, unittest]
 
 import terminal_status/types
 
+import ./fixtures
+
 const
   redOpen = "\e[31m"
   ansiReset = "\e[0m"
-
-let baseTime = getMonoTime()
-
-proc at(milliseconds: int64): MonoTime =
-  baseTime + initDuration(milliseconds = milliseconds)
 
 suite "shared status types":
   test "terminal states are classified exactly":

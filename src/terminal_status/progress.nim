@@ -261,6 +261,19 @@ proc initMultiProgress*(): MultiProgress =
   ## Creates an empty collection whose first allocated ID is `TaskId(1)`.
   MultiProgress(entries: @[], nextIdValue: 1, idsExhausted: false)
 
+when defined(terminalStatusTest):
+  proc setNextTaskIdForTesting*(multi: var MultiProgress; nextId: uint64) =
+    ## Positions an empty collection at a chosen next ID for exhaustion tests.
+    ##
+    ## This deterministic test seam is unavailable in ordinary package builds.
+    ## It rejects non-empty collections so tests cannot invalidate existing ID
+    ## ordering or uniqueness guarantees.
+    if multi.entries.len != 0:
+      raise newException(ValueError,
+        "task ID test seam requires an empty multi-progress collection")
+    multi.nextIdValue = nextId
+    multi.idsExhausted = false
+
 proc len*(multi: MultiProgress): int =
   ## Returns the number of currently stored tasks.
   multi.entries.len

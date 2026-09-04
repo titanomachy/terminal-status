@@ -3,10 +3,7 @@ import std/[monotimes, options, times, unittest]
 import terminal_status/steps
 import terminal_status/types
 
-let baseTime = getMonoTime()
-
-proc at(milliseconds: int64): MonoTime =
-  baseTime + initDuration(milliseconds = milliseconds)
+import ./fixtures
 
 suite "step tracker":
   test "construction validates pending steps and optional title":
@@ -58,10 +55,16 @@ suite "step tracker":
     check tracker.step(2).state == statusSucceeded
     check tracker.step(2).finishedAt == some(at(400))
     check tracker.elapsed(at(900)).inMilliseconds == 400
+    tracker.setCurrentDetail("published")
+    tracker.setTitle("Released")
+    check tracker.step(2).detail == "published"
+    check tracker.title == "Released"
     expect StatusStateError:
       tracker.advance(at(1000))
     expect StatusStateError:
       tracker.start(at(1000))
+    expect StatusStateError:
+      tracker.cancel(at(1000))
 
   test "advance before start is rejected without mutation":
     var tracker = initStepTracker(["Fetch"])

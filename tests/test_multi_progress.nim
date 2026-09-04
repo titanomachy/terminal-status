@@ -1,12 +1,9 @@
-import std/[monotimes, options, sequtils, times, unittest]
+import std/[options, sequtils, unittest]
 
 import terminal_status/progress
 import terminal_status/types
 
-let baseTime = getMonoTime()
-
-proc at(milliseconds: int64): MonoTime =
-  baseTime + initDuration(milliseconds = milliseconds)
+import ./fixtures
 
 suite "multi-progress":
   test "empty collection allocates stable insertion-ordered IDs":
@@ -72,6 +69,24 @@ suite "multi-progress":
     multi.cancel(cancelled, at(500))
     check multi.task(cancelled).state == statusCancelled
 
+  test "delegated validation failures are atomic":
+    var multi = initMultiProgress()
+    let
+      determinate = multi.addTask("Compile", 5, now = at(0))
+      indeterminate = multi.addIndeterminateTask("Upload", now = at(0))
+    multi.advance(determinate, 3, at(100))
+
+    for operation in 0 .. 4:
+      let before = multi.tasks
+      expect StatusError, ValueError:
+        case operation
+        of 0: multi.advance(determinate, 3, at(200))
+        of 1: multi.setCompleted(determinate, 2, at(200))
+        of 2: multi.advance(indeterminate, 1, at(200))
+        of 3: multi.setCompleted(indeterminate, 0, at(200))
+        else: multi.setLabel(determinate, "  ")
+      check multi.tasks == before
+
   test "unknown IDs never mutate collection state":
     var multi = initMultiProgress()
     let id = multi.addTask("Known", 3, now = at(0))
@@ -100,6 +115,23 @@ suite "multi-progress":
     expect ValueError:
       discard multi.addIndeterminateTask("  ", now = at(0))
     check multi.addTask("Good", 1, now = at(0)) == TaskId(1)
+
+  when defined(terminalStatusTest):
+    test "ID allocation reaches uint64.high once and then reports exhaustion":
+      var multi = initMultiProgress()
+      multi.setNextTaskIdForTesting(uint64.high)
+      let finalId = multi.addTask("Final ID", 1, now = at(0))
+      check finalId == TaskId(uint64.high)
+      check multi.taskIds == @[finalId]
+
+      let before = multi.tasks
+      expect TaskIdExhaustedError:
+        discard multi.addTask("Overflow", 1, now = at(100))
+      check multi.tasks == before
+
+      expect ValueError:
+        multi.setNextTaskIdForTesting(1)
+      check multi.tasks == before
 
   test "new tasks may follow terminal tasks":
     var multi = initMultiProgress()

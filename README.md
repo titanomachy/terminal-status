@@ -382,8 +382,11 @@ remain in their normal repository directories.
 nimble check
 nim c --path:src src/terminal_status.nim
 nimble test
+nimble testArc
+nimble testOrc
 nimble c -r examples/shared_types.nim
 nimble c -r examples/validation.nim
+nimble c -r examples/deterministic_testing.nim
 nimble c -r examples/spinner.nim
 nimble c -r examples/progress_bar.nim
 nimble c -r examples/indeterminate_bar.nim
@@ -401,3 +404,10 @@ nimble docs
 
 The documentation task writes generated API documentation and indexes to
 `build/docs/`; it does not create the conventional `htmldocs/` directory.
+
+The default, ARC, and ORC test tasks run the same sorted focused suite. Model
+and renderer assertions use injected monotonic timestamps, live-output tests
+use unique captures beneath `build/test-tmp/`, and isolated import probes must
+produce no output or terminal side effects. See the
+[deterministic testing guide](docs/testing.md) for the test matrix, fixtures,
+stream-isolation rules, and focused commands.
