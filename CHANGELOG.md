@@ -6,6 +6,10 @@ This project follows Semantic Versioning.
 
 ### Added
 
+- Complete the Phase 4 public façade with all component, rendering, theme, and
+  live exports; add process-isolated, empty-output import probes for the façade
+  and every public submodule, plus façade/focused-import documentation and a
+  finite example.
 - Reject unsafe caller-supplied live frames before output or cache mutation,
   with complete control-class tests and explicit SGR/OSC-8 acceptance coverage.
 - Document single-thread row ownership and add a finite TerminalScreen

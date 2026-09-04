@@ -303,6 +303,30 @@ measurement. The live module uses TerminalScreen for deferred capability
 detection and cursor commands, but never opens a raw-mode session. Library
 model and rendering modules never query or write to a terminal.
 
+Import `terminal_status` when the complete API is convenient. Applications
+with a narrower dependency boundary can import focused modules instead:
+
+```nim
+import terminal_status/[progress, rendering, themes]
+
+var bar = initProgressBar("Compile", 4, "modules")
+bar.advance(3)
+
+var options = defaultRenderOptions()
+options.characters = statusAscii
+options.useColor = false
+echo bar.render(options)
+```
+
+Both forms are safe during module initialization. Importing the façade or any
+focused module emits and flushes no output, performs no terminal capability or
+environment query, starts no timer or thread, and installs no mutable global
+status state. Terminal detection occurs only when `open` is explicitly called
+on an auto-mode `LiveDisplay`; default constructors and pure renderers do not
+open the live layer. The finite [`api_facade.nim`](examples/api_facade.nim)
+example compiles in façade mode by default and in focused-import mode with
+`-d:focusedImports`.
+
 ## Development
 
 Compiler products, caches, test executables, and generated documentation must
@@ -324,6 +348,8 @@ nimble c -r examples/renderers.nim -- --once
 nimble c -r examples/customization.nim -- --once
 nimble c -r examples/live_output.nim
 nimble c -r examples/screen_composition.nim
+nimble c -r examples/api_facade.nim
+nimble c -r -d:focusedImports examples/api_facade.nim
 nimble docs
 ```
 
