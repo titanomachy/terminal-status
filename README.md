@@ -581,8 +581,7 @@ development-only `interoperability.nim` example is checked by
 
 The documentation task writes generated API documentation and indexes to
 `build/docs/`; it does not create the conventional `htmldocs/` directory. See
-[CONTRIBUTING.md](CONTRIBUTING.md) for change requirements,
-[RELEASING.md](RELEASING.md) for the clean-checkout release procedure, and
+[CONTRIBUTING.md](CONTRIBUTING.md) for change requirements and
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for dependency and source
 attribution.
 

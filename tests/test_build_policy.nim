@@ -139,14 +139,13 @@ suite "repository build policy":
       check ("exec \"" & releaseStep & "\"") in packageMetadata
 
     for document in [
-      "CONTRIBUTING.md", "RELEASING.md", "THIRD_PARTY_NOTICES.md"
+      "CONTRIBUTING.md", "THIRD_PARTY_NOTICES.md"
     ]:
       check fileExists(repositoryDir / document)
 
     let readme = readFile(repositoryDir / "README.md")
     check "nimble releaseCheck" in readme
     check "CONTRIBUTING.md" in readme
-    check "RELEASING.md" in readme
     check "THIRD_PARTY_NOTICES.md" in readme
 
   test "correctness tests contain no timing sleeps":
