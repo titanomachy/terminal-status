@@ -22,15 +22,25 @@ type
     ## positive. `useColor` controls both theme styling and safe caller ANSI;
     ## disabling it guarantees plain output.
     width*: int
+      ## Maximum cells per output row, or zero for unbounded output.
     barWidth*: int
+      ## Requested positive number of cells inside a progress bar.
     characters*: StatusCharacters
+      ## Unicode or printable-ASCII presentation selection.
     useColor*: bool
+      ## Enables theme and safe caller ANSI when true; otherwise strips both.
     showCount*: bool
+      ## Requests completed/total count metadata when space permits.
     showElapsed*: bool
+      ## Requests elapsed-time metadata when space permits.
     showRate*: bool
+      ## Requests average lifetime-rate metadata when available and space permits.
     showEta*: bool
+      ## Requests determinate running ETA when available and space permits.
     indeterminateIntervalMs*: int
+      ## Positive milliseconds per indeterminate pulse position.
     theme*: StatusTheme
+      ## Per-call semantic styles; rendering never mutates this value.
 
   ProgressRenderData = object
     label: string

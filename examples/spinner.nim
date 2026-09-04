@@ -1,9 +1,9 @@
 ## A finite spinner renderer example.
 ##
-## This example redraws one line itself because the LiveDisplay output layer is
-## introduced in a later implementation phase. It uses TerminalScreen only for
-## terminal detection and exception-safe cursor ownership. Redirected output
-## receives the final snapshot without animation-frame flooding.
+## This component-focused example redraws one line directly with
+## TerminalScreen's cursor helpers. Applications that need a managed multi-row
+## region should use `LiveDisplay`, as shown by `live_status.nim`. Redirected
+## output receives only the final spinner snapshot.
 
 import std/[monotimes, os, times]
 

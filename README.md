@@ -10,6 +10,19 @@ The `0.1.x` line requires Nim 2.2.10 or newer and builds on
 `terminal_style >= 0.1.1` and `terminal_screen >= 0.1.1`. The normative design
 and API contracts live in [`specs/`](specs/).
 
+## Installation
+
+Add TerminalStatus to your application's Nimble file:
+
+```nim
+requires "terminal_status >= 0.1.0"
+```
+
+Nimble resolves TerminalStyle and TerminalScreen transitively. TerminalLayout,
+TerminalTable, TerminalGraph, TerminalPrompt, and TerminalWidgets are not
+runtime dependencies; they may consume rendered status strings at the ordinary
+string boundary.
+
 ![TerminalStatus pure component renderers](docs/images/renderers.gif)
 
 [Download the source asciicast](docs/recordings/renderers.cast) or run the
@@ -280,8 +293,11 @@ withTerminalSession screen, stdin, stdout, sessionOptions:
 
 See the
 [live output guide](docs/live-output.md) and finite
-[`live_output.nim`](examples/live_output.nim) example. For an application that
-already owns terminal state, [`screen_composition.nim`](examples/screen_composition.nim)
+[`live_status.nim`](examples/live_status.nim) manual-refresh example. The
+[`redirected_output.nim`](examples/redirected_output.nim) example isolates the
+default final-only behavior, while [`live_output.nim`](examples/live_output.nim)
+exposes each output and cleanup strategy as a CLI option. For an application
+that already owns terminal state, [`screen_composition.nim`](examples/screen_composition.nim)
 shows a `LiveDisplay` inside a non-raw TerminalScreen session; closing the
 display leaves that surrounding session open and untouched.
 
@@ -392,6 +408,8 @@ nimble c -r examples/progress_bar.nim
 nimble c -r examples/indeterminate_bar.nim
 nimble c -r examples/multi_progress.nim
 nimble c -r examples/step_tracker.nim
+nimble c -r examples/live_status.nim
+nimble c -r examples/redirected_output.nim
 nimble c -r examples/renderers.nim -- --once
 nimble c -r examples/customization.nim -- --once
 nimble c -r examples/live_output.nim

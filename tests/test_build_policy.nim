@@ -60,6 +60,28 @@ suite "repository build policy":
     check "--outdir:build/docs" in packageMetadata
     check not dirExists(repositoryDir / "htmldocs")
 
+  test "required finite examples and documentation links remain present":
+    const requiredExamples = [
+      "spinner.nim",
+      "progress_bar.nim",
+      "indeterminate_bar.nim",
+      "multi_progress.nim",
+      "step_tracker.nim",
+      "live_status.nim",
+      "customization.nim",
+      "redirected_output.nim"
+    ]
+    let readme = readFile(repositoryDir / "README.md")
+    for exampleName in requiredExamples:
+      check fileExists(repositoryDir / "examples" / exampleName)
+      check ("examples/" & exampleName) in readme
+
+    let liveExample = readFile(repositoryDir / "examples" / "live_status.nim")
+    check "withLiveDisplay" in liveExample
+    check ".update(" in liveExample
+    check "plainFinalOnly" in
+      readFile(repositoryDir / "examples" / "redirected_output.nim")
+
   test "the required focused test layout and memory-manager tasks remain present":
     for relativePath in [
       "tests/fixtures.nim",

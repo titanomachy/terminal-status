@@ -9,8 +9,8 @@ import terminal_style
 type
   StatusCharacters* = enum
     ## Selects the preferred character repertoire for status output.
-    statusUnicode
-    statusAscii
+    statusUnicode ## Use the built-in Unicode markers and spinner frames.
+    statusAscii ## Use printable-ASCII fallbacks.
 
   StatusMarkers* = object
     ## Semantic markers and bar characters used by pure status renderers.
@@ -19,15 +19,25 @@ type
     ## one terminal cell. Custom values are public so applications can define
     ## their own visual language; renderers remain responsible for width.
     pending*: string
+      ## Marker for work that has not started.
     running*: string
+      ## Marker for active determinate work.
     succeeded*: string
+      ## Marker for successfully completed work.
     failed*: string
+      ## Marker for failed work.
     cancelled*: string
+      ## Marker for cancelled work.
     barStart*: string
+      ## Opening delimiter for progress bars.
     barEnd*: string
+      ## Closing delimiter for progress bars.
     barComplete*: string
+      ## Repeated cell representing completed progress.
     barRemaining*: string
+      ## Repeated cell representing remaining progress.
     detailSeparator*: string
+      ## Separator inserted between a step label and non-empty detail.
 
   StatusTheme* = object
     ## Semantic TerminalStyle values applied by pure status renderers.
@@ -36,16 +46,27 @@ type
     ## query terminal capabilities, or emit ANSI. Render options decide whether
     ## these styles are enabled for each render call.
     spinnerStyle*: TerminalStyle
+      ## Style for animated spinner and pulse glyphs.
     runningStyle*: TerminalStyle
+      ## Style for active semantic markers.
     successStyle*: TerminalStyle
+      ## Style for successful semantic markers.
     failureStyle*: TerminalStyle
+      ## Style for failed semantic markers.
     cancelledStyle*: TerminalStyle
+      ## Style for cancelled semantic markers.
     pendingStyle*: TerminalStyle
+      ## Style for pending semantic markers.
     labelStyle*: TerminalStyle
+      ## Style for component labels and step-tracker titles.
     detailStyle*: TerminalStyle
+      ## Style for optional step detail.
     completeBarStyle*: TerminalStyle
+      ## Style for completed progress-bar cells.
     remainingBarStyle*: TerminalStyle
+      ## Style for remaining progress-bar cells.
     metadataStyle*: TerminalStyle
+      ## Style for counts, percentages, rates, elapsed time, and ETA.
 
 proc unicodeStatusMarkers*(): StatusMarkers =
   ## Returns the Unicode status marker and progress-bar preset.

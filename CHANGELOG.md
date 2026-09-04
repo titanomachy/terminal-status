@@ -6,6 +6,10 @@ This project follows Semantic Versioning.
 
 ### Added
 
+- Complete the Phase 5 examples and documentation handoff with the normative
+  finite example set, including caller-driven live refresh and isolated
+  redirected final-only output; expand installation and lifecycle guidance,
+  API doc comments, generated documentation checks, and README example links.
 - Complete the Phase 5 quality matrix with shared injected-time fixtures,
   additional model/render/live lifecycle and hostile-input cases, deterministic
   TaskId exhaustion coverage, and build-policy guards against correctness

@@ -11,16 +11,16 @@ import terminal_style
 type
   StatusState* = enum
     ## Lifecycle state shared by status components.
-    statusPending
-    statusRunning
-    statusSucceeded
-    statusFailed
-    statusCancelled
+    statusPending ## Work has not started.
+    statusRunning ## Work is currently in progress.
+    statusSucceeded ## Work ended successfully.
+    statusFailed ## Work ended unsuccessfully.
+    statusCancelled ## Work was cancelled before success or failure.
 
   ProgressMode* = enum
     ## Whether a progress task has a known numeric total.
-    progressDeterminate
-    progressIndeterminate
+    progressDeterminate ## Completion is measured against a positive total.
+    progressIndeterminate ## Completion has no numeric total, fraction, or ETA.
 
   StatusError* = object of CatchableError
     ## Base exception for TerminalStatus model errors.
@@ -39,24 +39,38 @@ type
     ##
     ## Mutating this value never mutates the collection that produced it.
     id*: TaskId
+      ## Stable collection-assigned identifier for this task.
     label*: string
+      ## Original, unnormalized task label.
     unit*: string
+      ## Optional original unit label.
     mode*: ProgressMode
+      ## Whether this snapshot has determinate numeric progress.
     state*: StatusState
+      ## Lifecycle state at the time of the snapshot.
     completed*: int64
+      ## Completed count, or zero for indeterminate work.
     total*: Option[int64]
+      ## Positive determinate total, or `none` for indeterminate work.
     startedAt*: MonoTime
+      ## Monotonic timestamp at which this task was created running.
     finishedAt*: Option[MonoTime]
+      ## First terminal-transition timestamp, when terminal.
 
   StepSnapshot* = object
     ## Detached, read-only-by-ownership view of one tracker step.
     ##
     ## Mutating this value never mutates the tracker that produced it.
     label*: string
+      ## Original, unnormalized step label.
     detail*: string
+      ## Optional original detail text.
     state*: StatusState
+      ## Lifecycle state at the time of the snapshot.
     startedAt*: Option[MonoTime]
+      ## Monotonic start time, absent while the step is pending.
     finishedAt*: Option[MonoTime]
+      ## First terminal-transition timestamp, when terminal.
 
 proc `==`*(left, right: TaskId): bool {.borrow.}
   ## Compares task IDs by their underlying unsigned value.

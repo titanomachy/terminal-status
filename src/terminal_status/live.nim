@@ -16,27 +16,27 @@ import terminal_status/types
 type
   LiveMode* = enum
     ## Selects how a live display writes frames.
-    liveAuto
-    liveAnsi
-    livePlain
+    liveAuto ## Detect ANSI capability once when the display opens.
+    liveAnsi ## Force bounded ANSI row redraws without capability detection.
+    livePlain ## Force plain, newline-delimited output without ANSI controls.
 
   PlainOutputPolicy* = enum
     ## Selects whether plain output retains only the final frame or logs every
     ## changed visible frame.
-    plainFinalOnly
-    plainEveryChange
+    plainFinalOnly ## Cache updates and emit only the final non-empty frame.
+    plainEveryChange ## Immediately emit every changed visible frame.
 
   FinishPolicy* = enum
     ## Selects whether the current frame remains visible when the display
     ## closes.
-    finishKeep
-    finishClear
+    finishKeep ## Retain the final frame when closing.
+    finishClear ## Clear or suppress the final frame when closing.
 
   LiveDisplayState* = enum
     ## Lifecycle state of a single-use live display.
-    displayNew
-    displayOpen
-    displayClosed
+    displayNew ## Constructed but not yet opened.
+    displayOpen ## Open and able to accept complete frames.
+    displayClosed ## Permanently closed; the display cannot be reopened.
 
   LiveDisplayError* = object of StatusError
     ## Raised when a live display operation is invalid for its lifecycle.

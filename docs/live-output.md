@@ -47,9 +47,11 @@ options.mode = livePlain
 options.plainPolicy = plainEveryChange
 ```
 
-The finite [`live_output.nim`](../examples/live_output.nim) example uses auto
-mode by default. It also demonstrates `--every-change`, forced `--ansi`,
-`--clear`, and display-owned `--hide-cursor` behavior.
+The finite [`redirected_output.nim`](../examples/redirected_output.nim)
+example forces this final-only strategy so it prints the same single snapshot
+in a terminal, file, or pipe. [`live_output.nim`](../examples/live_output.nim)
+uses auto mode by default and also demonstrates `--every-change`, forced
+`--ansi`, `--clear`, and display-owned `--hide-cursor` behavior.
 
 ## Complete-frame safety
 
@@ -99,6 +101,10 @@ Do not let another writer modify the display's terminal rows while it is open.
 TerminalStatus does not enter raw mode, create a TerminalScreen session, query
 terminal geometry, or run a background refresh loop. Applications choose
 renderer widths and schedule their own refreshes.
+
+The finite [`live_status.nim`](../examples/live_status.nim) example shows the
+complete pattern: mutate a model, render it with the loop's monotonic timestamp,
+submit the complete frame explicitly, and let `withLiveDisplay` own cleanup.
 
 For application logs, clear or close the display before writing and then redraw
 or create a new display. Two displays may target unrelated streams, but sharing
