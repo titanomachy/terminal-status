@@ -3,7 +3,7 @@
 ## Invalid caller input raises catchable `ValueError` exceptions in every
 ## build mode; validation does not rewrite accepted strings.
 
-import terminal_status/types
+import terminal_status
 
 let styledLabel = "\e[32mReady\e[0m"
 requireMeaningfulText(styledLabel)
@@ -32,3 +32,11 @@ showRejection("unequal frame widths") do ():
 
 showRejection("negative count") do ():
   requireNonNegative(-1, "completed")
+
+# Commands ending in m can change keyboard settings instead of styling text.
+# Rendering removes them from caller labels without executing them.
+var renderOptions = defaultRenderOptions()
+renderOptions.characters = statusAscii
+renderOptions.useColor = false
+let untrusted = initSpinner("Ready\e[>4;2m", lineSpinner())
+doAssert untrusted.render(renderOptions, untrusted.startedAt) == "- Ready"

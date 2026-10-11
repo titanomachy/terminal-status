@@ -134,8 +134,10 @@ Before accepting a frame, validate:
 - reject any carriage return (`\r`) or tab;
 - reject C0/C1 controls other than LF and valid bytes inside retained ANSI
   sequences;
-- using TerminalStyle tokenization, allow plain text, SGR CSI ending in `m`,
-  and well-formed OSC-8 open/close tokens;
+- using TerminalStyle tokenization, allow plain text, numeric SGR CSI
+  (`ESC [` plus digits/semicolons/colons plus `m`), and well-formed OSC-8
+  open/close tokens; reject private prefixes and intermediate bytes, including
+  keyboard-setting/query commands ending in `m`;
 - reject cursor movement, erasure, title changes, clipboard OSC, two-byte
   escapes, malformed/incomplete escapes, and every other control sequence.
 

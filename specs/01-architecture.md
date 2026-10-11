@@ -82,6 +82,8 @@ src/
     themes.nim
     rendering.nim
     live.nim
+    private/
+      ansi_safety.nim # shared allowlist for TerminalStyle-parsed tokens
 ```
 
 The façade MUST import and export every public module. Importing either the

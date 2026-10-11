@@ -199,6 +199,36 @@ suite "live output strategies":
     check capture.finishCapture() ==
       frame.replace("\n", "\r\n") & "\r\n"
 
+  test "private and intermediate m commands fail without output or cache changes":
+    for mode in [liveAnsi, livePlain]:
+      for policy in [plainFinalOnly, plainEveryChange]:
+        var capture = openCapture("non-sgr-m")
+        var options = defaultLiveDisplayOptions(capture.output)
+        options.mode = mode
+        options.plainPolicy = policy
+        var display = initLiveDisplay(options)
+        display.open()
+        display.update("safe")
+        let before = readFile(capture.path)
+        for command in ["\e[>4;2m", "\e[?4m", "\e[=1m", "\e[1$m", "\e[1 m"]:
+          expect ValueError:
+            display.update("unsafe" & command)
+          check readFile(capture.path) == before
+        display.close()
+        check capture.finishCapture() ==
+          (if mode == liveAnsi: "safe\r\n" else: "safe\n")
+
+  test "numeric SGR accepts empty resets indexed colors and RGB subparameters":
+    var capture = openCapture("numeric-sgr")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = liveAnsi
+    options.flushWrites = false
+    let frame = "\e[m\e[1;32mready\e[38;5;123m indexed" &
+      "\e[38;2;255;0;0m RGB\e[48:2::0:128:255m background\e[0m"
+    withLiveDisplay display, options:
+      display.update(frame)
+    check capture.finishCapture() == frame & "\r\n"
+
   test "every unsafe frame class is rejected before output or cache mutation":
     var capture = openCapture("unsafe-controls")
     var options = defaultLiveDisplayOptions(capture.output)

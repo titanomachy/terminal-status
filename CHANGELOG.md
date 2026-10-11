@@ -2,6 +2,14 @@
 
 This project follows Semantic Versioning.
 
+## [Unreleased]
+
+### Fixed
+
+- Discard private/intermediate CSI commands from rendered caller text and reject
+  them before live output, preventing keyboard-setting/query commands ending
+  in `m` from being mistaken for SGR styling.
+
 ## [0.1.1] - 2026-09-04
 
 ### Fixed

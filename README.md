@@ -145,7 +145,8 @@ bar or label. Multi-row output has no trailing newline.
 
 Caller text is normalized to one safe row. SGR styles and OSC-8 hyperlinks are
 preserved and closed when color is enabled; terminal movement, erasure, title,
-clipboard, and other executable controls are removed. `useColor = false`
+clipboard, keyboard-setting/query CSI commands (even those ending in `m`),
+and other executable controls are removed. `useColor = false`
 removes both theme and caller ANSI. See the [pure rendering guide](docs/rendering.md)
 for metric formats, responsive reduction, and safety details.
 

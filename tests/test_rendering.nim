@@ -292,6 +292,36 @@ suite "responsive cell widths":
     check tracker.render(options, at(0)) == ". Impor..."
 
 suite "safe user text and color control":
+  test "private and intermediate m commands cannot escape any text field":
+    for command in ["\e[>4;2m", "\e[?4m", "\e[=1m", "\e[1$m", "\e[1 m"]:
+      let text = "safe" & command & "text"
+      let spinner = initSpinner(text, now = at(0))
+      var bar = initProgressBar(text, 10, text, at(0))
+      var multi = initMultiProgress()
+      var tracker = initStepTracker([text], text)
+      bar.advance(1, at(1_000))
+      discard multi.addTask(text, 10, text, at(0))
+      tracker.start(at(0))
+      tracker.setCurrentDetail(text)
+      for characters in [statusUnicode, statusAscii]:
+        for color in [true, false]:
+          for width in [0, 12]:
+            var options = defaultRenderOptions()
+            options.characters = characters
+            options.useColor = color
+            options.width = width
+            for frame in [spinner.render(options, at(1_000)),
+                          bar.render(options, at(1_000)),
+                          multi.render(options, at(1_000)),
+                          tracker.render(options, at(1_000))]:
+              check command notin frame
+              if width == 0:
+                check "safetext" in stripAnsi(frame)
+              else:
+                frame.checkRowsBounded(width)
+              if not color:
+                check '\e' notin frame
+
   test "row boundaries and terminal-moving controls are normalized or dropped":
     let hostile = "A\r\n  B\tC\e[2K\e]0;owned\a\e7!"
     let spinner = initSpinner(hostile, initSpinnerStyle(["*"] , 100), at(0))
@@ -348,6 +378,13 @@ suite "safe user text and color control":
     plain.useColor = false
     check hyperlinkSpinner.render(plain, at(0)) == "* Link"
     check styledSpinner.render(plain, at(0)) == "* red"
+
+  test "numeric SGR parameters remain available in caller text":
+    for opening in ["\e[m", "\e[1;32m", "\e[38;5;123m",
+                    "\e[38;2;255;0;0m", "\e[48:2::0:128:255m"]:
+      let label = opening & "text\e[0m"
+      let spinner = initSpinner(label, initSpinnerStyle(["*"], 100), at(0))
+      check spinner.render(unstyledOptions(), at(0)) == "* " & label
 
   test "styling changes bytes but never visible display width":
     let spinner = initSpinner("Visible width", now = at(0))

@@ -158,7 +158,10 @@ Before styling or measuring a label, title, detail, or unit, normalize it:
    one ordinary space. Remove remaining C0/C1 control code points. Preserve all
    other valid Unicode text. A malformed UTF-8 sequence MAY be replaced with
    U+FFFD but MUST NOT crash or be treated as terminal control.
-3. Retain an `atkCsi` token only when its final byte is `m` (SGR).
+3. Retain an `atkCsi` token only when it is `ESC [` followed by zero or
+   more decimal digits, semicolons, or colons and a final `m` (SGR). Private
+   prefixes (`>`, `?`, `=`, `<`) and intermediate bytes are forbidden even
+   when the final byte is `m`; these can change or query keyboard settings.
 4. Retain an `atkOsc` token only when it is a well-formed OSC-8 open or close
    hyperlink token (`ESC ] 8 ; ... ; ... BEL/ST`).
 5. Drop every `atkEscape`, non-SGR CSI, and non-OSC-8 OSC token.

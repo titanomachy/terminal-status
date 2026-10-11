@@ -63,6 +63,10 @@ incomplete escape raises `ValueError` before anything is written or the cached
 final frame changes. This strict boundary prevents a caller-supplied frame
 from moving outside the rows owned by the display.
 
+SGR is restricted to numeric parameters with semicolon/colon separators.
+Private or intermediate CSI commands, including keyboard-setting/query
+commands ending in `m`, raise `ValueError` in both ANSI and plain modes.
+
 Pure TerminalStatus renderers already satisfy this contract. If an application
 constructs frames itself, normalize untrusted labels through a renderer rather
 than passing arbitrary terminal byte strings directly to `update`.

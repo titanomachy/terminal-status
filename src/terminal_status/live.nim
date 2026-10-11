@@ -12,6 +12,7 @@ import terminal_screen
 import terminal_style
 
 import terminal_status/types
+import ./private/ansi_safety
 
 type
   LiveMode* = enum
@@ -145,7 +146,7 @@ proc validateFrame(frame: string) =
           raise newException(ValueError,
             "live frame contains a disallowed control character")
     of atkCsi:
-      if token.value[^1] != 'm':
+      if not token.value.isSafeSgr:
         raise newException(ValueError,
           "live frame contains a non-SGR CSI sequence")
     of atkOsc:
@@ -263,7 +264,8 @@ proc update*(display: var LiveDisplay; frame: string) =
   ## Validates and submits one complete logical frame.
   ##
   ## A frame is empty or contains LF-separated rows without a trailing LF.
-  ## Safe SGR and well-formed OSC-8 controls are retained; carriage returns,
+  ## Numeric SGR (including indexed/RGB colors) and well-formed OSC-8 controls
+  ## are retained. Private/intermediate CSI commands, carriage returns,
   ## tabs, other C0/C1 controls, cursor movement, erasure, unrelated ANSI
   ## controls, and malformed/incomplete escapes raise `ValueError` before
   ## output or cached state changes.

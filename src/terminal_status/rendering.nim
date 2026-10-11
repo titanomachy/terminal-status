@@ -12,6 +12,7 @@ import std/[math, monotimes, options, strutils, times, unicode]
 import terminal_style
 
 import ./[progress, spinners, steps, themes, types]
+import ./private/ansi_safety
 
 type
   RenderOptions* = object
@@ -132,7 +133,7 @@ proc normalizeText(value: string): string =
           lastVisibleWhitespace = rune.isWhiteSpace
           boundaryActive = false
     of atkCsi:
-      if token.value[^1] == 'm':
+      if token.value.isSafeSgr:
         result.add token.value
         sgrOpen = not token.value.isSgrReset
     of atkOsc:
@@ -401,6 +402,8 @@ proc render*(spinner: Spinner; options = defaultRenderOptions();
   ## Running spinners use `now` to select a frame; terminal spinners use their
   ## semantic marker. Invalid options raise `ValueError`. Caller text is
   ## normalized to one safe row, and a positive width is a cell-width maximum.
+  ## Only numeric SGR parameters are retained; private/intermediate CSI
+  ## commands are discarded even when their final byte is `m`.
   options.validate()
   let
     markerSet = options.markers

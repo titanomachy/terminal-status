@@ -67,7 +67,10 @@ Labels, units, titles, and details are normalized to one terminal row. Newline,
 carriage-return, and tab boundaries become one space. Cursor movement, erasure,
 terminal-title, clipboard, device-control, and other executable controls are
 dropped. Safe SGR styling and OSC-8 hyperlinks remain when `useColor = true`
-and are closed before the segment or truncated row ends.
+and are closed before the segment or truncated row ends. SGR accepts numeric
+parameters and semicolon/colon separators, including indexed and RGB colors.
+Private or intermediate CSI commands such as `ESC[>4;2m` are discarded: their
+final `m` does not make them styling commands.
 
 Set `useColor = false` for redirected output or any plain-text destination. It
 removes both theme styling and safe ANSI supplied by the caller:
