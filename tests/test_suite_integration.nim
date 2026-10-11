@@ -172,6 +172,24 @@ when defined(posix):
     pty.slave.close()
     discard posix.close(pty.master)
 
+  proc readBytes(pty: Pty; expectedLength: int): string =
+    ## PTY output can arrive in separate chunks even after every write was
+    ## flushed. Wait for readable data with a bounded timeout and accumulate
+    ## it. Small buffers exercise partial reads deterministically.
+    while result.len < expectedLength:
+      var readable: TFdSet
+      FD_ZERO(readable)
+      FD_SET(pty.master, readable)
+      var timeout = Timeval(tv_sec: posix.Time(2))
+      if select(pty.master + 1, addr readable, nil, nil, addr timeout) <= 0:
+        raise newException(IOError, "incomplete pseudo-terminal output")
+      var chunk = newString(7)
+      let count = posix.read(pty.master, addr chunk[0], chunk.len)
+      if count <= 0:
+        raise newException(IOError, "cannot read pseudo-terminal output")
+      chunk.setLen(count)
+      result.add chunk
+
   proc comparableLocalFlags(mode: Termios): Cflag =
     when defined(macosx):
       mode.c_lflag and not PENDIN
@@ -197,15 +215,8 @@ when defined(posix):
         display.update("123456789012345")
         display.update("done")
 
-      # Nonblocking read prevents a failing output path from hanging the suite.
-      let flags = fcntl(pty.master, F_GETFL, 0)
-      require flags >= 0
-      require fcntl(pty.master, F_SETFL, flags or O_NONBLOCK) == 0
-      var bytes = newString(256)
-      let count = posix.read(pty.master, addr bytes[0], bytes.len)
-      require count > 0
-      bytes.setLen(count)
-      check bytes == "\r1234567890\r\e[2K\rdone\r\e[2K\r"
+      let expected = "\r1234567890\r\e[2K\rdone\r\e[2K\r"
+      check pty.readBytes(expected.len) == expected
 
     test "LiveDisplay never enters or restores terminal input modes":
       var pty = openPty()

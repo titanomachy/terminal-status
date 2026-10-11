@@ -4,15 +4,32 @@ This project follows Semantic Versioning.
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-10-11
+
+### Added
+
+- Add `LiveDisplayOptions.width` for explicit ANSI output geometry and
+  `LiveDisplay.width` for passing detected width to responsive renderers.
+- Add regression coverage for retained ANSI controls, live row clipping,
+  Unicode and hyperlink safety, and pseudo-terminal width detection.
+
 ### Fixed
 
 - Discard private/intermediate CSI commands from rendered caller text and reject
   them before live output, preventing keyboard-setting/query commands ending
   in `m` from being mistaken for SGR styling.
 - Bound ANSI live rows to detected or explicit output width so terminal wrapping
-  cannot leave stale rows after replacement or `finishClear`. Add
-  `LiveDisplayOptions.width` and `LiveDisplay.width` for explicit geometry and
-  responsive rendering; plain output retains full frames.
+  cannot leave stale rows after replacement or `finishClear`.
+- Handle partial reads in pseudo-terminal integration tests to prevent
+  intermittent CI failures.
+
+### Changed
+
+- Start bounded ANSI frames in column one and suppress updates whose visible
+  content is unchanged after clipping. Plain output retains full frames.
+- Update live-output guides and examples with responsive rendering, explicit
+  width overrides, and the requirement to recreate displays after resizing.
+- Add the TerminalDeck package map to the README.
 
 ## [0.1.1] - 2026-09-04
 
