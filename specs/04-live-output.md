@@ -35,6 +35,7 @@ type
     finishPolicy*: FinishPolicy
     hideCursor*: bool
     flushWrites*: bool
+    width*: int
 
   LiveDisplay* = object # fields private
 
@@ -42,6 +43,7 @@ proc defaultLiveDisplayOptions*(output: File = stderr): LiveDisplayOptions
 proc initLiveDisplay*(options = defaultLiveDisplayOptions()): LiveDisplay
 proc state*(display: LiveDisplay): LiveDisplayState
 proc effectiveMode*(display: LiveDisplay): Option[LiveMode]
+proc width*(display: LiveDisplay): Option[int]
 proc open*(display: var LiveDisplay)
 proc update*(display: var LiveDisplay, frame: string)
 proc close*(display: var LiveDisplay)
@@ -61,7 +63,8 @@ Default options:
 - plain policy: `plainFinalOnly`;
 - finish policy: `finishKeep`;
 - hide cursor: `false`;
-- flush writes: `true`.
+- flush writes: `true`;
+- width: `0` (detect ANSI output geometry during open).
 
 The cursor is not hidden by default because an application or TerminalScreen
 session may already own cursor visibility. Applications can opt in when they
@@ -74,8 +77,9 @@ does not query capabilities.
 
 `open` behavior:
 
-- `displayNew`: validate options, select an effective mode, optionally hide the
-  cursor in ANSI mode, and transition to `displayOpen`;
+- `displayNew`: validate the borrowed file and non-negative width, select an
+  effective mode and ANSI width, optionally hide the cursor in ANSI mode, and
+  transition to `displayOpen`;
 - `displayOpen`: idempotent no-op;
 - `displayClosed`: raise `LiveDisplayError`; displays are single-use.
 
@@ -121,8 +125,21 @@ documentation must describe this realistic boundary.
 Capability detection occurs once per display, not per update.
 
 TerminalStatus does not open a TerminalScreen session and never changes input
-mode. It does not query terminal geometry. Renderer width is an explicit caller
-choice.
+mode. ANSI width is resolved once during `open`:
+
+- a positive `options.width` supplies a caller-known terminal-cell maximum and
+  skips geometry detection; it MUST NOT exceed the available output columns;
+- zero calls TerminalScreen `tryTerminalSize(output = options.output)` and uses
+  its columns when available; failure leaves the width unknown;
+- plain mode does not query geometry or clip output;
+- `display.width` returns none while new, in plain mode, or when geometry is
+  unavailable, otherwise some(resolvedWidth), retained after close.
+
+Pass `display.width.get(0)` to renderer options for responsive layout. With
+unknown ANSI geometry, callers MUST supply a positive live width to prevent
+wrapping. Width must remain valid while the display is open: close before a
+resize and create a new display afterward. Frame row count must also fit the
+available viewport rows. No resize monitoring or background query is added.
 
 ## Frame contract
 
@@ -145,9 +162,13 @@ On violation, raise `ValueError` without modifying cached state or output.
 This stricter live contract is intentional: renderer output already complies,
 and arbitrary cursor-bearing strings could escape the display's owned region.
 
-The live layer MUST NOT truncate or style frames. In ANSI mode it retains safe
-SGR/OSC-8 tokens. In plain mode it removes all ANSI with TerminalStyle and
-writes only visible text.
+The live layer MUST NOT apply presentation styles. After full validation, ANSI
+mode clips each logical row to the resolved width using TerminalStyle
+`truncateAnsi(row, width, suffix = "")`. It preserves whole graphemes, closes
+sliced SGR/OSC-8 state, and never adds a suffix or padding. Internal empty rows
+are preserved; clipping may also produce empty rows. When width is unknown,
+rows are retained without clipping. In plain mode it removes all ANSI with
+TerminalStyle, retains the full text, and writes only visible text.
 
 An empty frame means “no owned rows.” In ANSI mode it clears a previous region;
 in plain mode it replaces the cached final snapshot with empty output.
@@ -166,14 +187,17 @@ Do not export the erase sequence as a general cursor API.
 
 ### First non-empty update
 
-Write the frame at the current cursor location, replacing each logical LF with
-CRLF. Do not append a newline after the final row. Store the exact validated
-frame and its logical row count. The cursor ends after the final row.
+When width is known, write CR first so the bounded frame begins at column one.
+Otherwise preserve the current cursor location. Write the clipped frame with
+logical LF separators replaced by CRLF. Do not append a newline after the
+final row. Store the clipped frame and its row count. Each bounded logical row
+occupies exactly one physical row, and the cursor ends after the final row.
+If clipping leaves no frame, write nothing and own no rows.
 
 ### Duplicate update
 
-If the validated frame is byte-identical to the cached frame, perform no write
-and no flush.
+If the clipped frame is byte-identical to the cached visible frame, perform
+no write and no flush, including changes entirely outside the visible width.
 
 ### Replacement update
 
@@ -184,8 +208,8 @@ If a previous non-empty frame owns `P` rows:
 3. for each previous row from first to last, write `ESC[2K`; between rows write
    `cursorDownCode(1)` followed by CR;
 4. if `P > 1`, write `cursorUpCode(P - 1)`; then write CR;
-5. write the new frame with CRLF row joins, or write nothing for an empty new
-   frame;
+5. write the new clipped frame with CRLF row joins, or write nothing for an
+   empty new frame;
 6. replace cached text and row count, then flush once when configured.
 
 This deliberately clears all previous rows before drawing. It is simpler and
@@ -241,7 +265,8 @@ Plain mode never hides/shows the cursor and never emits any ANSI token.
 
 ## Byte-exact examples
 
-Using forced ANSI, no cursor hiding, and `flushWrites = false`:
+Using forced ANSI on a geometry-less file with width zero, no cursor hiding,
+and `flushWrites = false`:
 
 ```text
 update("one")

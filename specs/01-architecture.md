@@ -161,8 +161,11 @@ frame content as a redraw instruction supplied by the caller.
 - Live auto mode uses ANSI redraw only for an ANSI-capable terminal; otherwise
   it switches to plain mode.
 - Plain mode strips all ANSI before writing.
-- Terminal size lookup failure is not fatal. The live layer does not resize
-  already-rendered frames; callers can pass an explicit width to renderers.
+- Terminal size lookup failure is not fatal. ANSI live output resolves a width
+  during open and safely clips overlong rows when width is known. Callers can
+  supply explicit live geometry and use the resolved width for responsive
+  rendering; plain output keeps full rows. The specific width and resize
+  ownership rules are defined in `04-live-output.md`.
 
 ## Cross-package composition
 

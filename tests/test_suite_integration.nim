@@ -1,4 +1,4 @@
-import std/[os, osproc, unittest]
+import std/[options, os, osproc, unittest]
 
 import terminal_screen
 import terminal_status
@@ -157,9 +157,11 @@ when defined(posix):
     master: cint
     slave: File
 
-  proc openPty(): Pty =
+  proc openPty(columns = 0; rows = 0): Pty =
     var slaveFd: cint
-    if openpty(addr result.master, addr slaveFd, nil, nil, nil) != 0:
+    var size = IOctl_WinSize(ws_col: cushort(columns), ws_row: cushort(rows))
+    let sizePointer = if columns > 0 and rows > 0: addr size else: nil
+    if openpty(addr result.master, addr slaveFd, nil, nil, sizePointer) != 0:
       raiseOSError(osLastError())
     if not open(result.slave, FileHandle(slaveFd), fmReadWrite):
       discard posix.close(result.master)
@@ -184,6 +186,27 @@ when defined(posix):
       left.c_cc == right.c_cc
 
   suite "POSIX TerminalScreen composition":
+    test "ANSI open detects geometry from its borrowed output stream":
+      var pty = openPty(columns = 10, rows = 24)
+      defer: pty.close()
+      var liveOptions = defaultLiveDisplayOptions(pty.slave)
+      liveOptions.mode = liveAnsi
+      liveOptions.finishPolicy = finishClear
+      withLiveDisplay display, liveOptions:
+        check display.width == some(10)
+        display.update("123456789012345")
+        display.update("done")
+
+      # Nonblocking read prevents a failing output path from hanging the suite.
+      let flags = fcntl(pty.master, F_GETFL, 0)
+      require flags >= 0
+      require fcntl(pty.master, F_SETFL, flags or O_NONBLOCK) == 0
+      var bytes = newString(256)
+      let count = posix.read(pty.master, addr bytes[0], bytes.len)
+      require count > 0
+      bytes.setLen(count)
+      check bytes == "\r1234567890\r\e[2K\rdone\r\e[2K\r"
+
     test "LiveDisplay never enters or restores terminal input modes":
       var pty = openPty()
       defer: pty.close()

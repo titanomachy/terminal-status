@@ -60,12 +60,17 @@ type
       ## Hides the cursor only in ANSI mode and restores it during cleanup.
     flushWrites*: bool
       ## Flushes effective updates and close output when enabled.
+    width*: int
+      ## Maximum ANSI row width in terminal cells. Zero detects the output's
+      ## width once during `open`; a positive value asserts a caller-known
+      ## width. Plain output is never clipped. Negative values are invalid.
 
   LiveDisplay* = object
     ## A single-use live output region with private mutable state.
     options: LiveDisplayOptions
     currentState: LiveDisplayState
     selectedMode: Option[LiveMode]
+    selectedWidth: Option[int]
     cachedFrame: string
     ownedRows: int
     lastPlainFrame: string
@@ -88,7 +93,8 @@ proc defaultLiveDisplayOptions*(output: File = stderr): LiveDisplayOptions =
     plainPolicy: plainFinalOnly,
     finishPolicy: finishKeep,
     hideCursor: false,
-    flushWrites: true
+    flushWrites: true,
+    width: 0
   )
 
 proc initLiveDisplay*(
@@ -111,6 +117,15 @@ proc state*(display: LiveDisplay): LiveDisplayState =
 proc effectiveMode*(display: LiveDisplay): Option[LiveMode] =
   ## Returns the selected ANSI/plain mode after `open`, or none while new.
   display.selectedMode
+
+proc width*(display: LiveDisplay): Option[int] =
+  ## Returns the ANSI row width resolved during `open`, including after close.
+  ##
+  ## Returns none before open, in plain mode, or when automatic geometry is
+  ## unavailable. Renderers can use `display.width.get(0)` for responsive
+  ## layout. The width must remain valid while the display owns terminal rows;
+  ## close the display before resizing and create a new one afterward.
+  display.selectedWidth
 
 proc validOsc8(sequence: string): bool =
   if not sequence.startsWith("\e]8;"):
@@ -180,20 +195,32 @@ proc clearingBytes(rows: int): string =
     result.add cursorUpCode(rows - 1)
   result.add '\r'
 
+proc boundedFrame(display: LiveDisplay; frame: string): string =
+  if frame.len == 0 or display.selectedWidth.isNone:
+    return frame
+  var rows: seq[string]
+  for row in frame.split('\n'):
+    rows.add truncateAnsi(row, display.selectedWidth.get, suffix = "")
+  rows.join("\n")
+
 proc writeAnsiUpdate(display: var LiveDisplay; frame: string) =
-  if frame == display.cachedFrame:
+  let visibleFrame = display.boundedFrame(frame)
+  if visibleFrame == display.cachedFrame:
     return
 
   var bytes: string
   if display.ownedRows > 0:
     bytes.add clearingBytes(display.ownedRows)
-  if frame.len > 0:
-    bytes.add terminalFrame(frame)
+  if visibleFrame.len > 0:
+    if display.ownedRows == 0 and display.selectedWidth.isSome:
+      # Width bounds are meaningful only when the frame starts in column one.
+      bytes.add '\r'
+    bytes.add terminalFrame(visibleFrame)
 
   if bytes.len > 0:
     display.options.output.write(bytes)
-  display.cachedFrame = frame
-  display.ownedRows = logicalRows(frame)
+  display.cachedFrame = visibleFrame
+  display.ownedRows = logicalRows(visibleFrame)
   if bytes.len > 0 and display.options.flushWrites:
     display.options.output.flushFile()
 
@@ -219,8 +246,10 @@ proc open*(display: var LiveDisplay) =
   ## Opens a new display and selects its effective output mode once.
   ##
   ## Forced modes perform no capability query. Auto mode asks TerminalScreen
-  ## whether the borrowed output supports ANSI. Opening an already-open display
-  ## is a no-op; a closed display cannot be reused.
+  ## whether the borrowed output supports ANSI. In ANSI mode, width zero asks
+  ## TerminalScreen for output geometry once; a positive width skips that query.
+  ## Negative widths raise `ValueError` before I/O. Opening an already-open
+  ## display is a no-op; a closed display cannot be reused.
   case display.currentState
   of displayOpen:
     return
@@ -232,6 +261,7 @@ proc open*(display: var LiveDisplay) =
 
   if display.options.output == nil:
     raise newException(ValueError, "live output file must not be nil")
+  requireNonNegative(display.options.width, "live width")
 
   let selected = case display.options.mode
     of liveAnsi: liveAnsi
@@ -242,7 +272,17 @@ proc open*(display: var LiveDisplay) =
       else:
         livePlain
 
+  var selectedWidth = none(int)
+  if selected == liveAnsi:
+    if display.options.width > 0:
+      selectedWidth = some(display.options.width)
+    else:
+      let size = tryTerminalSize(output = display.options.output)
+      if size.isSome:
+        selectedWidth = some(size.get.columns)
+
   display.selectedMode = some(selected)
+  display.selectedWidth = selectedWidth
   if selected == liveAnsi and display.options.hideCursor:
     display.options.output.hideCursor(flush = false)
     display.cursorHidden = true
@@ -270,8 +310,14 @@ proc update*(display: var LiveDisplay; frame: string) =
   ## controls, and malformed/incomplete escapes raise `ValueError` before
   ## output or cached state changes.
   ##
-  ## ANSI mode redraws the owned rows. Plain final-only mode caches the latest
-  ## frame without writing, while every-change mode logs changed visible
+  ## ANSI mode starts bounded frames in column one and clips each row to the
+  ## resolved width without a suffix, preserving whole graphemes and closing
+  ## sliced styles/hyperlinks. This prevents automatic terminal wrapping from
+  ## adding untracked rows. Frames are validated in full before clipping, and
+  ## duplicate visible frames perform no write or flush. When geometry is
+  ## unavailable, callers must set a positive options.width to prevent wrapping.
+  ## Plain final-only mode caches the latest frame without writing, while
+  ## every-change mode logs changed visible
   ## frames. Plain modes strip safe SGR and OSC-8 sequences before output.
   ## The owning thread must serialize updates with other writes to the same
   ## terminal rows.

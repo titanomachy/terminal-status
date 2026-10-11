@@ -59,7 +59,10 @@ For a narrow progress row, the renderer first removes elapsed, rate, ETA, and
 count metadata in that order. It then shrinks the inner bar to four cells,
 removes percentage, removes the whole bar, and finally truncates the label.
 Unicode output uses `…`; ASCII output uses `...`. Step details yield before
-their labels.
+their labels. When rendering for a live display, pass
+`display.width.get(0)` to `options.width` after opening (import `std/options`).
+The live layer provides final row clipping as described in the
+[live-output guide](live-output.md#ansi-row-width).
 
 ## Text and color safety
 

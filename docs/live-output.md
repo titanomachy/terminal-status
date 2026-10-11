@@ -71,15 +71,53 @@ Pure TerminalStatus renderers already satisfy this contract. If an application
 constructs frames itself, normalize untrusted labels through a renderer rather
 than passing arbitrary terminal byte strings directly to `update`.
 
+## ANSI row width
+
+In ANSI mode, `options.width = 0` detects the borrowed output's column count
+once during `open`. A positive width supplies explicit geometry and skips that
+query; negative widths raise `ValueError` before I/O. Set a positive width
+when forcing ANSI on a stream whose geometry cannot be detected. The supplied
+width must not exceed the available columns.
+
+`display.width` returns the resolved width as `Option[int]`, or none before
+open, in plain mode, or when detection is unavailable. Pass it to renderers so
+labels, bars, and metadata adapt to the available space:
+
+```nim
+import std/options
+import terminal_status
+
+var liveOptions = defaultLiveDisplayOptions(stdout)
+# liveOptions.width = 40 # optional caller-known geometry
+withLiveDisplay display, liveOptions:
+  var renderOptions = defaultRenderOptions()
+  renderOptions.width = display.width.get(0)
+  let progress = initProgressBar("Download", 100, "MB")
+  display.update(progress.render(renderOptions))
+```
+
+The live layer also clips each ANSI row to that width without a suffix or
+padding, preserving whole graphemes and closing sliced styling/hyperlinks.
+Validation covers the entire input before clipping, including hidden columns.
+This prevents terminal wrapping from creating rows that redraw cannot erase.
+Plain output always retains the full frame. With unknown ANSI geometry, rows
+remain unbounded until the caller supplies a width.
+
+Width is fixed for a display's lifetime. Close before changing terminal geometry
+and open a new display afterward. Keep the frame's row count within the available
+viewport height; the display does not own resize events or scrollback.
+
 ## ANSI redraw and finalization
 
 ANSI mode owns only the rows written by its latest frame. The first frame is
-written directly with logical LF separators converted to CRLF. A changed frame
-returns to the first owned row, erases every previously owned row, returns to
+written from column one when width is known, with logical LF separators
+converted to CRLF. A changed frame returns to the first owned row, erases every
+previously owned row, returns to
 that first row, and writes the replacement. Consequently, shorter text and
 frames with fewer rows cannot leave stale content, and rows outside the owned
-region are untouched. Byte-identical updates perform no write or flush; an
-empty update clears the current region and owns no rows.
+region are untouched. Updates with byte-identical visible frames after clipping
+perform no write or flush; an empty update clears the current region and owns
+no rows.
 
 `finishKeep` retains a non-empty ANSI frame and writes one CRLF so later output
 starts below it. `finishClear` erases the owned rows without adding a newline.
@@ -102,9 +140,9 @@ from a `finally` block during normal return or Nim exception unwinding. It does
 not handle process termination, signals, defects, or `SIGKILL`.
 
 Do not let another writer modify the display's terminal rows while it is open.
-TerminalStatus does not enter raw mode, create a TerminalScreen session, query
-terminal geometry, or run a background refresh loop. Applications choose
-renderer widths and schedule their own refreshes.
+TerminalStatus does not enter raw mode, create a TerminalScreen session, or
+run a background refresh loop. ANSI geometry is queried only during open when
+no explicit width is supplied. Applications schedule their own refreshes.
 
 The finite [`live_status.nim`](../examples/live_status.nim) example shows the
 complete pattern: mutate a model, render it with the loop's monotonic timestamp,

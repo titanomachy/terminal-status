@@ -21,6 +21,9 @@ liveOptions.hideCursor = true
 
 withLiveDisplay display, liveOptions:
   var renderOptions = defaultRenderOptions()
+  # Use the detected live width so metadata and bars adapt before live clipping.
+  # An explicit liveOptions.width can supply geometry when detection is absent.
+  renderOptions.width = display.width.get(0)
   renderOptions.useColor = display.effectiveMode.get == liveAnsi
   renderOptions.barWidth = 16
 

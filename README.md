@@ -389,6 +389,14 @@ subsequent output below the retained frame; set `finishPolicy = finishClear` to
 erase the region on close. Cursor hiding is opt-in and ownership-aware:
 `hideCursor = true` restores visibility exactly once during cleanup.
 
+ANSI displays detect the output width once during open and clip overlong rows
+safely, preventing automatic wrapping from leaving stale rows. Set
+`LiveDisplayOptions.width` to a positive caller-known width when detection is
+unavailable; zero detects automatically and negative widths raise `ValueError`.
+Use `display.width.get(0)` for responsive renderer options (import
+`std/options`). Plain output keeps full rows. Close before resizing and create
+a new display afterward; see the [live width guide](docs/live-output.md#ansi-row-width).
+
 Redirected output defaults to `plainFinalOnly`, so the example emits only the
 latest frame when it closes instead of logging every animation tick. Set
 `mode = livePlain` and `plainPolicy = plainEveryChange` to write every changed
@@ -402,9 +410,9 @@ and malformed escapes raise `ValueError` before output or cached state changes.
 Pure renderers already produce valid frames.
 
 Displays are single-use and single-thread owned. They never close the borrowed
-stream, enter raw input mode, query terminal geometry, or create a refresh
-loop. Updates and close flush only at the configured points, while duplicate
-frames perform neither operation. Prefer `withLiveDisplay`, whose `finally`
+stream, enter raw input mode, or create a refresh loop. Updates and close flush
+only at the configured points, while duplicate frames perform neither operation.
+Prefer `withLiveDisplay`, whose `finally`
 cleanup covers normal return and catchable Nim exceptions (not signals,
 process termination, defects, or `SIGKILL`).
 

@@ -2,6 +2,7 @@ import std/[options, os, strutils, unittest]
 
 import terminal_status
 import terminal_screen
+import terminal_style
 
 let
   repositoryDir = currentSourcePath().parentDir.parentDir
@@ -43,6 +44,46 @@ proc clearingBytes(rows: int): string =
     result.add cursorUpCode(rows - 1)
   result.add '\r'
 
+proc screenRows(bytes: string; columns: int): seq[string] =
+  ## Small ASCII screen model with delayed autowrap, CR/LF, and the cursor/erase
+  ## commands used by LiveDisplay. It checks visible results, not just bytes.
+  var row = 0
+  var column = 0
+  result = @[repeat(' ', columns)]
+  template ensureRow() =
+    while result.len <= row:
+      result.add repeat(' ', columns)
+  for token in tokenizeAnsi(bytes):
+    case token.kind
+    of atkText:
+      for character in token.value:
+        case character
+        of '\r': column = 0
+        of '\n':
+          inc row
+          ensureRow()
+        else:
+          doAssert character in {' ' .. '~'}
+          if column == columns:
+            column = 0
+            inc row
+            ensureRow()
+          result[row][column] = character
+          inc column
+    of atkCsi:
+      case token.value[^1]
+      of 'K':
+        doAssert token.value == "\e[2K"
+        result[row] = repeat(' ', columns)
+      of 'A': row = max(0, row - parseInt(token.value[2 ..< token.value.high]))
+      of 'B':
+        row += parseInt(token.value[2 ..< token.value.high])
+        ensureRow()
+      of 'm': discard
+      else: doAssert false, "unexpected screen command"
+    of atkOsc: discard
+    of atkEscape: doAssert false, "unexpected escape"
+
 suite "live output strategies":
   test "defaults borrow stderr and defer all effects until open":
     let options = defaultLiveDisplayOptions()
@@ -54,8 +95,10 @@ suite "live output strategies":
     check options.finishPolicy == finishKeep
     check not options.hideCursor
     check options.flushWrites
+    check options.width == 0
     check display.state == displayNew
     check display.effectiveMode == none(LiveMode)
+    check display.width == none(int)
 
     display.close()
     check display.state == displayClosed
@@ -81,6 +124,34 @@ suite "live output strategies":
     display.close()
 
     check capture.finishCapture() == ""
+
+  test "negative widths are rejected before selecting a mode or writing":
+    for mode in [liveAnsi, livePlain, liveAuto]:
+      var capture = openCapture("negative-width")
+      var options = defaultLiveDisplayOptions(capture.output)
+      options.mode = mode
+      options.width = -1
+      options.hideCursor = true
+      var display = initLiveDisplay(options)
+      expect ValueError:
+        display.open()
+      check display.state == displayNew
+      check display.effectiveMode.isNone
+      check display.width.isNone
+      display.close()
+      check capture.finishCapture() == ""
+
+  test "plain output retains full rows regardless of an explicit ANSI width":
+    for policy in [plainFinalOnly, plainEveryChange]:
+      var capture = openCapture("plain-width")
+      var options = defaultLiveDisplayOptions(capture.output)
+      options.mode = livePlain
+      options.plainPolicy = policy
+      options.width = 3
+      withLiveDisplay display, options:
+        check display.width.isNone
+        display.update("123456789012345")
+      check capture.finishCapture() == "123456789012345\n"
 
   test "a nil borrowed stream fails open without changing lifecycle state":
     var options = defaultLiveDisplayOptions()
@@ -284,6 +355,88 @@ suite "live output strategies":
     check capture.finishCapture() == "last valid frame\n"
 
 suite "ANSI redraw and cleanup":
+  test "width bounds prevent stale wrapped rows after replacement and clear":
+    # Confirm that the screen model detects the original logical-row bug.
+    let oldBytes = "123456789012345" & clearingBytes(1) & "done" & clearingBytes(1)
+    check screenRows(oldBytes, 10)[0] == "1234567890"
+
+    var capture = openCapture("bounded-clear")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = liveAnsi
+    options.width = 10
+    options.finishPolicy = finishClear
+    var display = initLiveDisplay(options)
+    check display.width.isNone
+    display.open()
+    check display.width == some(10)
+    display.update("123456789012345")
+    check readFile(capture.path) == "\r1234567890"
+    display.update("1234567890changed outside the visible width")
+    check readFile(capture.path) == "\r1234567890"
+    display.update("done")
+    display.close()
+    check display.width == some(10)
+    let bytes = capture.finishCapture()
+    check bytes == "\r1234567890" & clearingBytes(1) & "done" & clearingBytes(1)
+    check screenRows("banner\r\n" & bytes, 10) ==
+      @["banner    ", "          "]
+
+  test "bounded multi-row frames clear every row and preserve internal blanks":
+    var capture = openCapture("bounded-multi")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = liveAnsi
+    options.width = 10
+    options.finishPolicy = finishClear
+    withLiveDisplay display, options:
+      display.update("123456789012345\n\nabcdefghijklmno")
+      display.update("done")
+    let bytes = capture.finishCapture()
+    check bytes == "\r1234567890\r\n\r\nabcdefghij" &
+      clearingBytes(3) & "done" & clearingBytes(1)
+    check screenRows("banner\r\n" & bytes, 10) ==
+      @["banner    ", "          ", "          ", "          "]
+
+  test "bounded keep output finishes below the final physical row":
+    var capture = openCapture("bounded-keep")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = liveAnsi
+    options.width = 10
+    withLiveDisplay display, options:
+      display.update("123456789012345")
+    let bytes = capture.finishCapture()
+    check bytes == "\r1234567890\r\n"
+    check screenRows(bytes, 10) == @["1234567890", "          "]
+
+  test "clipping preserves graphemes and closes sliced styling and hyperlinks":
+    for sample in [
+      ("界界界", 3, "界"),
+      ("e\u0301e\u0301e\u0301", 2, "e\u0301e\u0301"),
+      ("界", 1, ""),
+      ("\e]8;;https://example.com\e\\\e[31mabcdef", 3, "abc")
+    ]:
+      var capture = openCapture("bounded-graphemes")
+      var options = defaultLiveDisplayOptions(capture.output)
+      options.mode = liveAnsi
+      options.width = sample[1]
+      withLiveDisplay display, options:
+        display.update(sample[0])
+      let bytes = capture.finishCapture()
+      check stripAnsi(bytes).replace("\r", "").replace("\n", "") == sample[2]
+      if sample[0].startsWith("\e]8;"):
+        check "\e]8;;\e\\" in bytes
+        check "\e[0m" in bytes
+
+  test "unsafe input outside the clipped columns still rejects the entire frame":
+    var capture = openCapture("bounded-unsafe")
+    var options = defaultLiveDisplayOptions(capture.output)
+    options.mode = liveAnsi
+    options.width = 4
+    withLiveDisplay display, options:
+      display.update("safe")
+      expect ValueError:
+        display.update("safe hidden\e[2J")
+    check capture.finishCapture() == "\rsafe\r\n"
+
   test "a first multi-row frame uses only terminal row separators":
     var capture = openCapture("ansi-first-multi")
     var options = defaultLiveDisplayOptions(capture.output)
