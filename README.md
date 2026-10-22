@@ -24,40 +24,20 @@ borrowed terminal; redirected files and pipes use deterministic plain output.
 
 ## TerminalDeck
 
-TerminalStatus is the status and progress component library in TerminalDeck,
-a set of focused Nim terminal packages that compose through ordinary strings
-and shared terminal-width and styling rules:
+TerminalStatus is the status and progress component library in [TerminalDeck](https://github.com/titanomachy/terminal-deck):
 
-```text
-TerminalDeck
-├── Foundations
-│   ├── TerminalStyle
-│   └── TerminalScreen
-├── Output components
-│   ├── TerminalStatus  ← this package
-│   ├── TerminalLayout
-│   ├── TerminalTable
-│   └── TerminalGraph
-└── Interaction
-    ├── TerminalPrompt
-    └── TerminalWidgets
-```
-
-![Nim terminal ecosystem package map](docs/images/nim-terminal-ecosystem.svg)
-
-These diagrams describe the suite, not the dependency graph. TerminalStatus
-depends only on TerminalStyle and TerminalScreen; the other packages can
-consume its rendered strings without adapters or reverse dependencies.
+![TerminalDeck ecosystem: Foundations, Output components, and Interaction.](docs/diagrams/terminal-deck.svg)
 
 ## Table of contents
 
-- [Platform support](#platform-support)
-- [Requirements](#requirements)
-- [TerminalDeck](#terminaldeck)
-- [Table of contents](#table-of-contents)
-- [Installation](#installation)
-- [Quick start](#quick-start)
-- [API overview](#api-overview)
+- [TerminalStatus](#terminalstatus)
+  - [Platform support](#platform-support)
+  - [Requirements](#requirements)
+  - [TerminalDeck](#terminaldeck)
+  - [Table of contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Quick start](#quick-start)
+  - [API overview](#api-overview)
   - [Themes and character presets](#themes-and-character-presets)
   - [Spinner](#spinner)
   - [Progress](#progress)
@@ -65,11 +45,11 @@ consume its rendered strings without adapters or reverse dependencies.
   - [Steps](#steps)
   - [Shared contracts](#shared-contracts)
   - [Live output strategies](#live-output-strategies)
-- [Focused modules](#focused-modules)
-- [Suite interoperability](#suite-interoperability)
-- [Examples](#examples)
-- [Development and documentation](#development-and-documentation)
-- [Attribution and license](#attribution-and-license)
+  - [Focused modules](#focused-modules)
+  - [Suite interoperability](#suite-interoperability)
+  - [Examples](#examples)
+  - [Development and documentation](#development-and-documentation)
+  - [Attribution and license](#attribution-and-license)
 
 ## Installation
 
