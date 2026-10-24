@@ -62,8 +62,12 @@ Expected future destinations:
 The documentation task MUST rebuild `build/docs/` from scratch so stale pages
 are not published. Nim's project documentation includes the public focused
 modules in `build/docs/terminal_status/`; redundant flattened module pages
-MUST NOT be generated. The task MUST produce `build/docs/index.html` as the API
-homepage, with links to the generated module pages and symbol index. GitHub
+MUST NOT be generated. The task MUST render `docs/api-index.md` to
+`build/docs/index.html` with Nim's Markdown renderer. This documentation
+homepage MUST include installation, a runnable quick-start tutorial, and links
+to the API facade, focused module pages, symbol index, guides, and finite
+examples. Its preview image MUST be copied to `build/docs/images/renderers.gif`
+so local previews and Pages deployments resolve the same assets. GitHub
 Pages MUST publish the generated `build/docs/` artifact through the
 Documentation workflow on `master`, or through a manual run on that branch.
 The Pages publishing source is GitHub Actions; the hand-written `docs/`

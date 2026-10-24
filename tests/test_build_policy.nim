@@ -80,11 +80,19 @@ suite "repository build policy":
   test "generated documentation includes a homepage and its linked assets":
     let docsDir = buildDir / "docs"
     if fileExists(docsDir / "terminal_status.html"):
-      for asset in ["index.html", "theindex.html", "nimdoc.out.css", "dochack.js"]:
+      for asset in [
+        "index.html", "theindex.html", "nimdoc.out.css", "dochack.js",
+        "images/renderers.gif"
+      ]:
         check fileExists(docsDir / asset)
       if fileExists(docsDir / "index.html"):
         let homepage = readFile(docsDir / "index.html")
+        check "<title>TerminalStatus documentation</title>" in homepage
+        check "href=\"terminal_status.html\"" in homepage
         check "href=\"theindex.html\"" in homepage
+        check "src=\"images/renderers.gif\"" in homepage
+        for section in ["quick-start", "api-reference", "guides", "examples"]:
+          check ("id=\"" & section & "\"") in homepage
         for moduleName in [
           "types", "spinners", "progress", "steps", "themes", "rendering", "live"
         ]:

@@ -263,9 +263,11 @@ describe invariants, exceptions, side effects, time semantics, ownership, and
 whether returned sequences are copies. Avoid comments that only restate a name.
 
 Generate public Nim API docs for the façade/project and focused modules that do
-not appear in the project output. Add a hand-written API index only if Nim's
-generated index cannot expose the module map clearly. Generated HTML is never
-committed and always goes to `build/docs/`.
+not appear in the project output. Provide a hand-written Markdown landing page
+with installation, a quick-start tutorial, and links to the API reference,
+guides, and examples. Render it with Nim's documentation styling as part of
+`nimble docs`. Generated HTML is never committed and always goes to
+`build/docs/`.
 
 ## Future Nimble task contract
 

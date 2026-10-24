@@ -6,6 +6,8 @@ This project follows Semantic Versioning.
 
 ### Added
 
+- Add a documentation homepage with installation, a quick-start tutorial,
+  an animated preview, and links to API modules, guides, and runnable examples.
 - Publish generated API documentation to GitHub Pages through a dedicated
   workflow on `master`, with an API homepage at `build/docs/index.html` for
   both local browsing and deployment.

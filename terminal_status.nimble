@@ -71,11 +71,13 @@ task suiteIntegration, "Run sibling-source and suite composition checks":
       " --path:../terminal-layout/src --path:../terminal-tables/src" &
       " examples/interoperability.nim"
 
-task docs, "Generate public API and focused module documentation":
+task docs, "Generate the documentation homepage and API reference":
   rmDir("build/docs")
   exec "nim doc --skipParentCfg:on --project --index:on --outdir:build/docs --path:src src/terminal_status.nim"
   exec "nim buildIndex --skipParentCfg:on --out:build/docs/theindex.html build/docs"
-  cpFile("build/docs/terminal_status.html", "build/docs/index.html")
+  exec "nim md2html --skipParentCfg:on --out:build/docs/index.html docs/api-index.md"
+  mkDir("build/docs/images")
+  cpFile("docs/images/renderers.gif", "build/docs/images/renderers.gif")
 
 task artifactPolicy, "Verify generated products remain beneath build":
   exec "nim c -r -d:terminalStatusTest tests/test_build_policy.nim"
