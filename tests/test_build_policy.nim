@@ -77,6 +77,21 @@ suite "repository build policy":
     check "--outdir:build/docs" in packageMetadata
     check not dirExists(repositoryDir / "htmldocs")
 
+  test "generated documentation includes a homepage and its linked assets":
+    let docsDir = buildDir / "docs"
+    if fileExists(docsDir / "terminal_status.html"):
+      for asset in ["index.html", "theindex.html", "nimdoc.out.css", "dochack.js"]:
+        check fileExists(docsDir / asset)
+      if fileExists(docsDir / "index.html"):
+        let homepage = readFile(docsDir / "index.html")
+        check "href=\"theindex.html\"" in homepage
+        for moduleName in [
+          "types", "spinners", "progress", "steps", "themes", "rendering", "live"
+        ]:
+          let modulePage = "terminal_status/" & moduleName & ".html"
+          check ("href=\"" & modulePage & "\"") in homepage
+          check fileExists(docsDir / modulePage)
+
   test "required finite examples and documentation links remain present":
     const requiredExamples = [
       "spinner.nim",

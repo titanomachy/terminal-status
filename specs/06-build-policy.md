@@ -59,6 +59,16 @@ Expected future destinations:
 | coverage HTML/badge | `build/coverage/` |
 | test captures | `build/test-tmp/` |
 
+The documentation task MUST rebuild `build/docs/` from scratch so stale pages
+are not published. Nim's project documentation includes the public focused
+modules in `build/docs/terminal_status/`; redundant flattened module pages
+MUST NOT be generated. The task MUST produce `build/docs/index.html` as the API
+homepage, with links to the generated module pages and symbol index. GitHub
+Pages MUST publish the generated `build/docs/` artifact through the
+Documentation workflow on `master`, or through a manual run on that branch.
+The Pages publishing source is GitHub Actions; the hand-written `docs/`
+directory is not the generated site. Generated HTML MUST NOT be committed.
+
 ## Required verification
 
 The configuration change is verified with:

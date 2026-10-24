@@ -4,6 +4,17 @@ This project follows Semantic Versioning.
 
 ## [Unreleased]
 
+### Added
+
+- Publish generated API documentation to GitHub Pages through a dedicated
+  workflow on `master`, with an API homepage at `build/docs/index.html` for
+  both local browsing and deployment.
+
+### Fixed
+
+- Remove redundant flattened API pages with broken import links from the
+  documentation build, and clear stale pages before regenerating the site.
+
 ## [0.1.2] - 2026-10-11
 
 ### Added

@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/titanomachy/terminal-status/actions/workflows/ci.yml/badge.svg)](https://github.com/titanomachy/terminal-status/actions/workflows/ci.yml)
 
+[API documentation](https://titanomachy.github.io/terminal-status/)
+
 `terminal_status` is a pure-Nim library under active development for terminal
 spinners, single and multi-progress bars, and ordered task step-trackers. Its
 component renderers are deterministic, terminal-cell aware, and ANSI-safe;
@@ -571,7 +573,13 @@ development-only `interoperability.nim` example is checked by
 `suiteIntegration` when its sibling packages are available.
 
 The documentation task writes generated API documentation and indexes to
-`build/docs/`; it does not create the conventional `htmldocs/` directory. See
+`build/docs/`; open `build/docs/index.html` for the API homepage. The
+[Documentation workflow](.github/workflows/docs.yml) publishes that directory
+to [GitHub Pages](https://titanomachy.github.io/terminal-status/) after pushes
+to `master`, and can also be run manually from the Actions tab on `master`.
+In **Settings → Pages → Build and deployment**, set **Source** to **GitHub
+Actions**. The checked-in `docs/` directory contains the hand-written guides
+and media; the generated API site is built during the workflow. See
 [CONTRIBUTING.md](CONTRIBUTING.md) for change requirements and
 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for dependency and source
 attribution.
